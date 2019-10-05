@@ -1,7 +1,8 @@
 language: python
 python: '3.7'
+cache: pip
 before_install:
-  - 'pip install poetry'
+  - 'pip install --pre poetry'
 install:
   - 'poetry install'
 script:
