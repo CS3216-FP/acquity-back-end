@@ -10,13 +10,12 @@ app = Sanic(load_env=False)
 app.config.update(
     {
         "DATABASE_URL": os.getenv(
-            "DATABASE_URL", "postgresql://acquity:acquity@localhost:5432/acquity"
+            "DATABASE_URL", "postgresql://acquity:acquity@localhost/acquity"
         )
     }
 )
 
 database_engine = create_engine(app.config["DATABASE_URL"])
-Base.metadata.create_all(database_engine)
 
 
 @app.route("/")
