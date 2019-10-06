@@ -20,6 +20,6 @@ def validate_input(schema):
 
 
 SELLER_AUTH_SCHEMA = {
-    "email": {"type": "string"},
+    "email": {"type": "string", "regex": "^.+@.+$"},
     "password": {"type": "string", "minlength": 6},
 }
