@@ -1,4 +1,8 @@
+import traceback
+
 from sanic import Blueprint, Sanic
+from sanic.exceptions import SanicException
+from sanic.response import json
 from sanic_cors.extension import CORS as initialize_cors
 from sanic_jwt import Initialize as initialize_jwt
 
@@ -14,6 +18,16 @@ initialize_jwt(blueprint, app=app, authenticate=seller_login)
 
 app.blueprint(blueprint)
 app.seller_service = SellerService()
+
+
+async def error_handler(request, exception):
+    if isinstance(exception, SanicException):
+        return json({"error": exception.message}, status=exception.status_code)
+    traceback.print_exc()
+    return json({"error": "An internal error occured."}, status=500)
+
+
+app.error_handler.add(Exception, error_handler)
 
 
 if __name__ == "__main__":
