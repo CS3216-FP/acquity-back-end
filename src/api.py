@@ -18,3 +18,10 @@ async def create_seller(request):
     email, password = itemgetter("email", "password")(request.json)
     SellerService().create_account(email, password)
     return json("")
+
+
+@blueprint.post("/login/seller")
+async def seller_login(request):
+    email, password = itemgetter("email", "password")(request.json)
+    password_is_correct = SellerService().authenticate(email, password)
+    return json(password_is_correct)
