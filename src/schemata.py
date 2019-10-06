@@ -7,7 +7,7 @@ from cerberus import Validator
 def validate_input(schema):
     def decorator(func):
         def decorated_func(*args, **kwargs):
-            validator = Validator(schema)
+            validator = Validator(schema, require_all=True)
             res = validator.validate(kwargs)
             if not res:
                 raise InvalidRequestException(validator.errors)

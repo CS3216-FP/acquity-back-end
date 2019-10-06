@@ -14,14 +14,12 @@ async def root(request):
 
 @blueprint.post("/seller/")
 async def create_seller(request):
-    filtered = {k: request.json.get(k) for k in ("email", "password")}
-    request.app.seller_service.create_account(**filtered)
+    request.app.seller_service.create_account(**request.json)
     return json("")
 
 
 async def seller_login(request):
-    filtered = {k: request.json.get(k) for k in ("email", "password")}
-    seller = request.app.seller_service.authenticate(**filtered)
+    seller = request.app.seller_service.authenticate(**request.json)
     if seller is None:
         raise AuthenticationFailed()
     return {"id": seller["id"], "email": seller["email"]}
