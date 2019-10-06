@@ -1,27 +1,15 @@
-import os
-
 from sanic import Sanic
-from sanic.response import json
-from sqlalchemy import create_engine
+from sanic_cors.extension import CORS
 
-from database import Base
+from api import blueprint
+from config import APP_CONFIG
 
 app = Sanic(load_env=False)
-app.config.update(
-    {
-        "DATABASE_URL": os.getenv(
-            "DATABASE_URL", "postgresql://acquity:acquity@localhost/acquity"
-        )
-    }
-)
+app.config.update(APP_CONFIG)
 
-database_engine = create_engine(app.config["DATABASE_URL"])
-
-
-@app.route("/")
-async def test(request):
-    return json({"hello": "world"})
+app.blueprint(blueprint)
+CORS(app)
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=os.getenv("PORT", 8000))
+    app.run(host="0.0.0.0", port=app.config["PORT"])
