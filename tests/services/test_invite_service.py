@@ -32,18 +32,8 @@ def test_get_invites():
             "expiry_time": expiry_time,
         }
 
-        invite = Invite(
-            origin_seller_id=seller_id,
-            destination_email="b@b",
-            valid=True,
-            expiry_time=expiry_time,
-        )
-        invite2 = Invite(
-            origin_seller_id=seller_id,
-            destination_email="c@c",
-            valid=False,
-            expiry_time=expiry_time,
-        )
+        invite = Invite(**invite_b_params)
+        invite2 = Invite(**invite_c_params)
         session.add_all([invite, invite2])
 
     invites = invite_service.get_invites(origin_seller_id=seller_id)
@@ -64,9 +54,12 @@ def test_create_invite():
 
         seller_id = str(seller.id)
 
-    invite = invite_service.create_invite(
+    invite_id = invite_service.create_invite(
         origin_seller_id=seller_id, destination_email="b@b"
-    )
+    )["id"]
+
+    with session_scope() as session:
+        invite = session.query(Invite).filter_by(id=invite_id).one().asdict()
 
     assert_dict_in(
         {"origin_seller_id": seller_id, "destination_email": "b@b", "valid": True},

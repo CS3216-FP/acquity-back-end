@@ -111,7 +111,7 @@ class SellOrderService:
             return [sell_order.asdict() for sell_order in sell_orders]
 
     @validate_input(EDIT_SELL_ORDER_SCHEMA)
-    def edit_order(self, id, subject_id, new_number_of_shares, new_price):
+    def edit_order(self, id, subject_id, new_number_of_shares=None, new_price=None):
         with session_scope() as session:
             sell_order = session.query(self.SellOrder).filter_by(id=id).one()
             if sell_order.seller_id != subject_id:
