@@ -10,7 +10,7 @@ def haha(a):
 
 
 def test_validate_input():
-    assert haha(a='x') == 'x'
+    assert haha(a="x") == "x"
     with pytest.raises(InvalidRequestException):
         haha({"a": 4})
     with pytest.raises(InvalidRequestException):

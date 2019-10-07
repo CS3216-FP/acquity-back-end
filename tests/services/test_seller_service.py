@@ -7,6 +7,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from src.database import Invite, Seller, session_scope
 from src.exceptions import UnauthorizedException
 from src.services import SellerService
+from tests.utils import assert_dict_in
 
 seller_service = SellerService(Seller=Seller, hasher=plaintext)
 
@@ -51,9 +52,7 @@ def test_authenticate():
         session.commit()
 
     seller = seller_service.authenticate(email="a@a", password="123456")
-    assert seller is not None
-    assert seller["email"] == "a@a"
-    assert seller["hashed_password"] == "123456"
+    assert_dict_in({"email": "a@a", "hashed_password": "123456"}, seller)
 
 
 def test_get_seller():
@@ -65,8 +64,7 @@ def test_get_seller():
     seller_id = seller_service.authenticate(email="a@a", password="123456")["id"]
 
     seller = seller_service.get_seller(id=seller_id)
-    assert seller["email"] == "a@a"
-    assert seller["hashed_password"] == "123456"
+    assert_dict_in({"email": "a@a", "hashed_password": "123456"}, seller)
 
     with pytest.raises(NoResultFound):
         seller_service.get_seller(id="00000000-0000-0000-0000-000000000000")
