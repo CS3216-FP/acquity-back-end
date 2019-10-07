@@ -1,10 +1,14 @@
 language: python
 python: '3.7'
 cache: pip
+services:
+  - postgresql
 before_install:
   - 'pip install --pre poetry'
 install:
   - 'poetry install'
+before_script:
+  - psql -c 'CREATE DATABASE acquity_test;' -U postgres
 script:
   - './lint.sh'
   - './test.sh'
