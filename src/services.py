@@ -1,15 +1,16 @@
 import datetime
-from exceptions import UnauthorizedException
 
 from passlib.hash import argon2
 
-from database import Invite, Seller, SellOrder, session_scope
-from schemata import (
+from src.database import Invite, Seller, SellOrder, session_scope
+from src.exceptions import UnauthorizedException
+from src.schemata import (
     CREATE_INVITE_SCHEMA,
     CREATE_SELL_ORDER_SCHEMA,
     DELETE_SELL_ORDER_SCHEMA,
     EDIT_SELL_ORDER_SCHEMA,
     SELLER_AUTH_SCHEMA,
+    SELLER_AUTH_SCHEMA_WITH_INVITATION,
     UUID_RULE,
     validate_input,
 )
@@ -21,10 +22,10 @@ class SellerService:
         self.Invite = Invite
         self.hasher = hasher
 
-    @validate_input(SELLER_AUTH_SCHEMA)
-    def create_account(self, email, password):
+    @validate_input(SELLER_AUTH_SCHEMA_WITH_INVITATION)
+    def create_account(self, email, password, check_invitation):
         with session_scope() as session:
-            if not self.can_create_account(email, session):
+            if check_invitation and not self.can_create_account(email, session):
                 raise UnauthorizedException(f"Email {email} is uninvited.")
 
             hashed_password = self.hasher.hash(password)
