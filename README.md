@@ -1,9 +1,11 @@
 # Acquity: Back-End
 
 ## Setup
-Install pip3
+Install Python 3.7. Use `pyenv` (https://github.com/pyenv/pyenv) to make life easy
 ```
-sudo apt install python3-pip
+curl https://pyenv.run | bash
+pyenv install 3.7
+pyenv local 3.7
 ```
 Install Poetry (https://poetry.eustace.io), prerelease version
 ```
