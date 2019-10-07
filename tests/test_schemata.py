@@ -4,13 +4,13 @@ from src.exceptions import InvalidRequestException
 from src.schemata import validate_input
 
 
-@validate_input({"a": "string"})
+@validate_input({"a": {"type": "string"}})
 def haha(a):
-    return 3
+    return a
 
 
 def test_validate_input():
-    assert haha({"a": "x"}) == 3
+    assert haha(a='x') == 'x'
     with pytest.raises(InvalidRequestException):
         haha({"a": 4})
     with pytest.raises(InvalidRequestException):
