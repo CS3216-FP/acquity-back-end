@@ -7,3 +7,4 @@ install:
   - 'poetry install'
 script:
   - './lint.sh'
+  - './test.sh'
