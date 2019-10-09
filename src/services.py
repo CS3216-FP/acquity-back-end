@@ -2,7 +2,7 @@ import datetime
 
 from passlib.hash import argon2
 
-from src.database import Invite, Seller, SellOrder, session_scope
+from src.database import Invite, Security, Seller, SellOrder, session_scope
 from src.exceptions import UnauthorizedException
 from src.schemata import (
     CREATE_INVITE_SCHEMA,
@@ -141,3 +141,12 @@ class SellOrderService:
 
             session.delete(sell_order)
         return {}
+
+
+class SecurityService:
+    def __init__(self, Security=Security):
+        self.Security = Security
+
+    def get_all(self):
+        with session_scope() as session:
+            return [sec.asdict() for sec in session.query(self.Security).all()]

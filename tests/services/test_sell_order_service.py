@@ -1,11 +1,8 @@
 import datetime
 
 import pytest
-from passlib.hash import plaintext
-from sqlalchemy.orm.exc import NoResultFound
 
 from src.database import Security, Seller, SellOrder, session_scope
-from src.exceptions import UnauthorizedException
 from src.services import SellOrderService
 from tests.utils import assert_dict_in
 
