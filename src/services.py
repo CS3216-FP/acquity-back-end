@@ -96,10 +96,13 @@ class SellOrderService:
         self.SellOrder = SellOrder
 
     @validate_input(CREATE_SELL_ORDER_SCHEMA)
-    def create_order(self, seller_id, number_of_shares, price):
+    def create_order(self, seller_id, number_of_shares, price, security_id):
         with session_scope() as session:
             sell_order = SellOrder(
-                seller_id=seller_id, number_of_shares=number_of_shares, price=price
+                seller_id=seller_id,
+                number_of_shares=number_of_shares,
+                price=price,
+                security_id=security_id,
             )
 
             session.add(sell_order)
