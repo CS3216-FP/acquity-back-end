@@ -2,55 +2,64 @@ import datetime
 
 from passlib.hash import argon2
 
-from src.database import Invite, Security, Seller, SellOrder, session_scope
+from src.database import Invite, Security, SellOrder, User, session_scope
 from src.exceptions import UnauthorizedException
 from src.schemata import (
     CREATE_INVITE_SCHEMA,
     CREATE_SELL_ORDER_SCHEMA,
+    CREATE_USER_SCHEMA,
     DELETE_SELL_ORDER_SCHEMA,
     EDIT_SELL_ORDER_SCHEMA,
-    SELLER_AUTH_SCHEMA,
-    SELLER_AUTH_SCHEMA_WITH_INVITATION,
+    USER_AUTH_SCHEMA,
     UUID_RULE,
     validate_input,
 )
 
 
-class SellerService:
-    def __init__(self, Seller=Seller, Invite=Invite, hasher=argon2):
-        self.Seller = Seller
+class UserService:
+    def __init__(self, User=User, Invite=Invite, hasher=argon2):
+        self.User = User
         self.Invite = Invite
         self.hasher = hasher
 
-    @validate_input(SELLER_AUTH_SCHEMA_WITH_INVITATION)
-    def create_account(self, email, password, full_name, check_invitation):
+    @validate_input(CREATE_USER_SCHEMA)
+    def create(self, email, password, full_name):
         with session_scope() as session:
-            if check_invitation and not self.can_create_account(email, session):
-                raise UnauthorizedException(f"Email {email} is uninvited.")
-
             hashed_password = self.hasher.hash(password)
-            seller = self.Seller(
-                email=email, full_name=full_name, hashed_password=hashed_password
+            user = self.User(
+                email=email,
+                full_name=full_name,
+                hashed_password=hashed_password,
+                can_buy=False,
+                can_sell=False,
             )
-            session.add(seller)
+            session.add(user)
 
-    @validate_input(SELLER_AUTH_SCHEMA)
+    @validate_input({"user_id": UUID_RULE})
+    def activate_buy_privileges(self, user_id):
+        pass
+
+    @validate_input({"user_id": UUID_RULE})
+    def activate_sell_privileges(self, user_id):
+        pass
+
+    @validate_input(USER_AUTH_SCHEMA)
     def authenticate(self, email, password):
         with session_scope() as session:
-            seller = session.query(self.Seller).filter_by(email=email).one()
-            if self.hasher.verify(password, seller.hashed_password):
-                return seller.asdict()
+            user = session.query(self.User).filter_by(email=email).one()
+            if self.hasher.verify(password, user.hashed_password):
+                return user.asdict()
             else:
                 return None
 
     @validate_input({"id": UUID_RULE})
-    def get_seller(self, id):
+    def get_user(self, id):
         with session_scope() as session:
-            seller = session.query(self.Seller).filter_by(id=id).one().asdict()
-        seller.pop("hashed_password")
-        return seller
+            user = session.query(self.User).filter_by(id=id).one().asdict()
+        user.pop("hashed_password")
+        return user
 
-    def can_create_account(self, email, session):
+    def _can_activate_seller_privileges(self, email, session):
         return (
             session.query(self.Invite)
             .filter(
@@ -96,10 +105,10 @@ class SellOrderService:
         self.SellOrder = SellOrder
 
     @validate_input(CREATE_SELL_ORDER_SCHEMA)
-    def create_order(self, seller_id, number_of_shares, price, security_id):
+    def create_order(self, user_id, number_of_shares, price, security_id):
         with session_scope() as session:
             sell_order = SellOrder(
-                seller_id=seller_id,
+                user_id=user_id,
                 number_of_shares=number_of_shares,
                 price=price,
                 security_id=security_id,
@@ -109,19 +118,17 @@ class SellOrderService:
             session.commit()
             return sell_order.asdict()
 
-    @validate_input({"seller_id": UUID_RULE})
-    def get_order_by_seller(self, seller_id):
+    @validate_input({"user_id": UUID_RULE})
+    def get_orders_by_user(self, user_id):
         with session_scope() as session:
-            sell_orders = (
-                session.query(self.SellOrder).filter_by(seller_id=seller_id).all()
-            )
+            sell_orders = session.query(self.SellOrder).filter_by(user_id=user_id).all()
             return [sell_order.asdict() for sell_order in sell_orders]
 
     @validate_input(EDIT_SELL_ORDER_SCHEMA)
     def edit_order(self, id, subject_id, new_number_of_shares=None, new_price=None):
         with session_scope() as session:
             sell_order = session.query(self.SellOrder).filter_by(id=id).one()
-            if sell_order.seller_id != subject_id:
+            if sell_order.user_id != subject_id:
                 raise UnauthorizedException("You need to own this order.")
 
             if new_number_of_shares is not None:
@@ -136,7 +143,7 @@ class SellOrderService:
     def delete_order(self, id, subject_id):
         with session_scope() as session:
             sell_order = session.query(self.SellOrder).filter_by(id=id).one()
-            if sell_order.seller_id != subject_id:
+            if sell_order.user_id != subject_id:
                 raise UnauthorizedException("You need to own this order.")
 
             session.delete(sell_order)

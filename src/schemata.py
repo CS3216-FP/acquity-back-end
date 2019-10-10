@@ -33,15 +33,11 @@ NONNEGATIVE_NUMBER_RULE = {"type": "number", "min": 0}
 OPTIONAL_NONNEGATIVE_NUMBER_RULE = {"type": "number", "min": 0, "required": False}
 
 
-SELLER_AUTH_SCHEMA = {
-    "email": EMAIL_RULE,
-    "password": {"type": "string", "minlength": 6},
-}
-SELLER_AUTH_SCHEMA_WITH_INVITATION = {
+USER_AUTH_SCHEMA = {"email": EMAIL_RULE, "password": {"type": "string", "minlength": 6}}
+CREATE_USER_SCHEMA = {
     "email": EMAIL_RULE,
     "full_name": {"type": "string"},
     "password": {"type": "string", "minlength": 6},
-    "check_invitation": {"type": "boolean"},
 }
 CREATE_INVITE_SCHEMA = {"origin_seller_id": UUID_RULE, "destination_email": EMAIL_RULE}
 CREATE_SELL_ORDER_SCHEMA = {
