@@ -52,19 +52,7 @@ class User(Base):
     can_buy = Column(Boolean, nullable=False)
     can_sell = Column(Boolean, nullable=False)
 
-    invites = relationship("SellInvite", back_populates="origin_seller")
     orders = relationship("SellOrder", back_populates="seller")
-
-
-class SellInvite(Base):
-    __tablename__ = "sell_invites"
-
-    origin_seller_id = Column(UUID, ForeignKey("users.id"), nullable=False)
-    destination_email = Column(String, nullable=False)
-    valid = Column(Boolean, nullable=False)
-    expiry_time = Column(DateTime(timezone=True), nullable=False)
-
-    origin_seller = relationship("User", back_populates="invites")
 
 
 class Security(Base):
