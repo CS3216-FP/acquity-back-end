@@ -46,9 +46,7 @@ async def create_invite(request, user):
 @blueprint.get("/sell_order/")
 @auth_required
 async def get_sell_orders_by_user(request, user):
-    return json(
-        request.app.sell_order_service.get_orders_by_user(user_id=user["id"])
-    )
+    return json(request.app.sell_order_service.get_orders_by_user(user_id=user["id"]))
 
 
 @blueprint.post("/sell_order/")
