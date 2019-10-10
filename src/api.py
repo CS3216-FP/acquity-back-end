@@ -17,25 +17,19 @@ async def root(request):
     return json({"hello": "world"})
 
 
-@blueprint.post("/seller/")
+@blueprint.post("/user/")
 @expects_json_object
 async def create_seller(request):
-    request.app.seller_service.create_account(**request.json, check_invitation=True)
+    request.app.user_service.create_account(**request.json, check_invitation=True)
     return json({})
 
 
 @expects_json_object
-async def seller_login(request):
-    seller = request.app.seller_service.authenticate(**request.json)
-    if seller is None:
+async def user_login(request):
+    user = request.app.user_service.authenticate(**request.json)
+    if user is None:
         raise AuthenticationFailed()
-    return {"id": seller["id"], "email": seller["email"]}
-
-
-@blueprint.get("/invite/")
-@auth_required
-async def get_invites(request, user):
-    return json(request.app.invite_service.get_invites(origin_seller_id=user["id"]))
+    return {"id": seller["id"]}
 
 
 @blueprint.post("/invite/")
@@ -43,8 +37,8 @@ async def get_invites(request, user):
 @expects_json_object
 async def create_invite(request, user):
     return json(
-        request.app.invite_service.create_invite(
-            **request.json, origin_seller_id=user["id"]
+        request.app.user_service.invite_to_be_seller(
+            **request.json, inviter_id=user["id"]
         )
     )
 
@@ -62,9 +56,7 @@ async def get_sell_orders_by_seller(request, user):
 @expects_json_object
 async def create_sell_order(request, user):
     return json(
-        request.app.sell_order_service.create_order(
-            **request.json, seller_id=user["id"]
-        )
+        request.app.sell_order_service.create_order(**request.json, user_id=user["id"])
     )
 
 
