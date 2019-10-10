@@ -3,6 +3,7 @@ import datetime
 import pytest
 
 from src.database import Security, SellOrder, User, session_scope
+from src.exceptions import UnauthorizedException
 from src.services import SellOrderService
 from tests.utils import assert_dict_in
 
@@ -51,7 +52,7 @@ def test_get_orders_by_user():
     assert_dict_in(sell_order_params_2, sell_order_40)
 
 
-def test_create_order():
+def test_create_order__authorized():
     with session_scope() as session:
         user = User(
             can_buy=False,
@@ -78,6 +79,28 @@ def test_create_order():
     with session_scope() as session:
         sell_order = session.query(SellOrder).filter_by(id=sell_order_id).one().asdict()
     assert_dict_in(sell_order_params, sell_order)
+
+
+def test_create_order__unauthorized():
+    with session_scope() as session:
+        user = User(
+            can_buy=False,
+            can_sell=False,
+            email="a@a",
+            hashed_password="123456",
+            full_name="Ben",
+        )
+        security = Security(name="Grab")
+        session.add_all([user, security])
+        session.commit()
+
+        user_id = str(user.id)
+        security_id = str(security.id)
+
+    with pytest.raises(UnauthorizedException):
+        sell_order_service.create_order(
+            user_id=user_id, number_of_shares=20, price=30, security_id=security_id
+        )
 
 
 def test_edit_order():

@@ -39,8 +39,8 @@ class UserService:
         with session_scope() as session:
             user = session.query(self.User).filter_by(id=user_id).one()
             user.can_buy = True
-            session.commit()
-            return user
+
+        return user.asdict()
 
     @validate_input(INVITE_SCHEMA)
     def invite_to_be_seller(self, inviter_id, invited_id):
@@ -51,8 +51,9 @@ class UserService:
 
             invited = session.query(self.User).filter_by(id=invited_id).one()
             invited.can_sell = True
+
             session.commit()
-            return invited
+            return invited.asdict()
 
     @validate_input(USER_AUTH_SCHEMA)
     def authenticate(self, email, password):
@@ -72,13 +73,18 @@ class UserService:
 
 
 class SellOrderService:
-    def __init__(self, SellOrder=SellOrder):
+    def __init__(self, SellOrder=SellOrder, User=User):
         self.SellOrder = SellOrder
+        self.User = User
 
     @validate_input(CREATE_SELL_ORDER_SCHEMA)
     def create_order(self, user_id, number_of_shares, price, security_id):
         with session_scope() as session:
-            sell_order = SellOrder(
+            user = session.query(self.User).filter_by(id=user_id).one()
+            if not user.can_sell:
+                raise UnauthorizedException("This user cannot sell securities.")
+
+            sell_order = self.SellOrder(
                 user_id=user_id,
                 number_of_shares=number_of_shares,
                 price=price,
