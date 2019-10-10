@@ -33,6 +33,11 @@ class UserService:
                 can_sell=False,
             )
             session.add(user)
+            session.commit()
+
+            result = user.asdict()
+        result.pop("hashed_password")
+        return result
 
     @validate_input({"user_id": UUID_RULE})
     def activate_buy_privileges(self, user_id):
@@ -53,7 +58,10 @@ class UserService:
             invited.can_sell = True
 
             session.commit()
-            return invited.asdict()
+
+            result = invited.asdict()
+        result.pop("hashed_password")
+        return result
 
     @validate_input(USER_AUTH_SCHEMA)
     def authenticate(self, email, password):

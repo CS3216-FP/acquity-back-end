@@ -19,9 +19,9 @@ async def root(request):
 
 @blueprint.post("/user/")
 @expects_json_object
-async def create_seller(request):
-    request.app.user_service.create_account(**request.json, check_invitation=True)
-    return json({})
+async def create_user(request):
+    user = request.app.user_service.create(**request.json)
+    return json(user)
 
 
 @expects_json_object
@@ -82,6 +82,6 @@ async def delete_sell_order(request, user, id):
 
 
 @blueprint.get("/security/")
-@auth_required
-async def get_all_securities(request, user):
+@protected(blueprint)
+async def get_all_securities(request):
     return json(request.app.security_service.get_all())
