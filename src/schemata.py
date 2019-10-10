@@ -39,9 +39,9 @@ CREATE_USER_SCHEMA = {
     "full_name": {"type": "string"},
     "password": {"type": "string", "minlength": 6},
 }
-CREATE_INVITE_SCHEMA = {"origin_seller_id": UUID_RULE, "destination_email": EMAIL_RULE}
+INVITE_SCHEMA = {"inviter_id": UUID_RULE, "invited_id": UUID_RULE}
 CREATE_SELL_ORDER_SCHEMA = {
-    "seller_id": UUID_RULE,
+    "user_id": UUID_RULE,
     "number_of_shares": NONNEGATIVE_NUMBER_RULE,
     "price": NONNEGATIVE_NUMBER_RULE,
     "security_id": UUID_RULE,

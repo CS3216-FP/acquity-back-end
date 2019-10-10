@@ -52,7 +52,8 @@ class User(Base):
     can_buy = Column(Boolean, nullable=False)
     can_sell = Column(Boolean, nullable=False)
 
-    orders = relationship("SellOrder", back_populates="seller")
+    sell_orders = relationship("SellOrder", back_populates="user")
+    buy_orders = relationship("BuyOrder", back_populates="user")
 
 
 class Security(Base):

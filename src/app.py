@@ -10,13 +10,12 @@ from sanic_jwt import Responses
 from src.api import blueprint, seller_login
 from src.config import APP_CONFIG
 from src.exceptions import AcquityException
-from src.services import InviteService, SecurityService, SellOrderService, UserService
+from src.services import SecurityService, SellOrderService, UserService
 
 app = Sanic(load_env=False)
 app.config.update(APP_CONFIG)
 
 app.user_service = UserService()
-app.invite_service = InviteService()
 app.sell_order_service = SellOrderService()
 app.security_service = SecurityService()
 
@@ -42,7 +41,7 @@ class AcquityJwtResponses(Responses):
 
 async def retrieve_seller(request, payload, *args, **kwargs):
     if payload is not None:
-        return request.app.seller_service.get_seller(id=payload.get("id"))
+        return request.app.user_service.get_user(id=payload.get("id"))
     else:
         return None
 

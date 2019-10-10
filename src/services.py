@@ -2,14 +2,14 @@ import datetime
 
 from passlib.hash import argon2
 
-from src.database import Invite, Security, SellOrder, User, session_scope
+from src.database import Security, SellOrder, User, session_scope
 from src.exceptions import UnauthorizedException
 from src.schemata import (
-    CREATE_INVITE_SCHEMA,
     CREATE_SELL_ORDER_SCHEMA,
     CREATE_USER_SCHEMA,
     DELETE_SELL_ORDER_SCHEMA,
     EDIT_SELL_ORDER_SCHEMA,
+    INVITE_SCHEMA,
     USER_AUTH_SCHEMA,
     UUID_RULE,
     validate_input,
@@ -17,9 +17,8 @@ from src.schemata import (
 
 
 class UserService:
-    def __init__(self, User=User, Invite=Invite, hasher=argon2):
+    def __init__(self, User=User, hasher=argon2):
         self.User = User
-        self.Invite = Invite
         self.hasher = hasher
 
     @validate_input(CREATE_USER_SCHEMA)
@@ -37,11 +36,23 @@ class UserService:
 
     @validate_input({"user_id": UUID_RULE})
     def activate_buy_privileges(self, user_id):
-        pass
+        with session_scope() as session:
+            user = session.query(self.User).filter_by(id=user_id).one()
+            user.can_buy = True
+            session.commit()
+            return user
 
-    @validate_input({"user_id": UUID_RULE})
-    def activate_sell_privileges(self, user_id):
-        pass
+    @validate_input(INVITE_SCHEMA)
+    def invite_to_be_seller(self, inviter_id, invited_id):
+        with session_scope() as session:
+            inviter = session.query(self.User).filter_by(id=inviter_id).one()
+            if not inviter.can_sell:
+                raise UnauthorizedException("Inviter is not a previous seller.")
+
+            invited = session.query(self.User).filter_by(id=invited_id).one()
+            invited.can_sell = True
+            session.commit()
+            return invited
 
     @validate_input(USER_AUTH_SCHEMA)
     def authenticate(self, email, password):
@@ -58,46 +69,6 @@ class UserService:
             user = session.query(self.User).filter_by(id=id).one().asdict()
         user.pop("hashed_password")
         return user
-
-    def _can_activate_seller_privileges(self, email, session):
-        return (
-            session.query(self.Invite)
-            .filter(
-                self.Invite.destination_email == email,
-                self.Invite.valid == True,
-                self.Invite.expiry_time >= datetime.datetime.now(),
-            )
-            .count()
-            > 0
-        )
-
-
-class InviteService:
-    def __init__(self, Invite=Invite):
-        self.Invite = Invite
-
-    @validate_input({"origin_seller_id": UUID_RULE})
-    def get_invites(self, origin_seller_id):
-        with session_scope() as session:
-            invites = (
-                session.query(self.Invite)
-                .filter_by(origin_seller_id=origin_seller_id)
-                .all()
-            )
-            return [invite.asdict() for invite in invites]
-
-    @validate_input(CREATE_INVITE_SCHEMA)
-    def create_invite(self, origin_seller_id, destination_email):
-        with session_scope() as session:
-            invite = self.Invite(
-                origin_seller_id=origin_seller_id,
-                destination_email=destination_email,
-                valid=True,
-                expiry_time=datetime.datetime.now() + datetime.timedelta(weeks=1),
-            )
-            session.add(invite)
-            session.commit()
-            return invite.asdict()
 
 
 class SellOrderService:
