@@ -1,4 +1,12 @@
 from os import getenv
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+client = os.getenv("CLIENT_ID")
+secret = os.getenv("CLIENT_SECRET")
+redirect_uri = os.getenv("REDIRECT_URI")
 
 ACQUITY_ENV = getenv("ACQUITY_ENV")
 DEFAULT_DATABASE_URL = ""
