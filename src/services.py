@@ -43,11 +43,13 @@ class UserService:
 
     @validate_input({"user_id": UUID_RULE})
     def activate_buy_privileges(self, user_id):
+        print(user_id)
         with session_scope() as session:
             user = session.query(self.User).filter_by(id=user_id).one()
             user.can_buy = True
-
-        return user.asdict()
+            session.commit()
+            result = user.asdict()
+        return result;
 
     @validate_input(INVITE_SCHEMA)
     def invite_to_be_seller(self, inviter_id, invited_id):
@@ -81,6 +83,11 @@ class UserService:
             user = session.query(self.User).filter_by(id=id).one().asdict()
         user.pop("hashed_password")
         return user
+
+    def get_user_id(self, user_email):
+        with session_scope() as session:
+            user = session.query(self.User).filter_by(email=user_email).one().asdict()
+        return {"user_id": user.get("id") }
 
 
 class SellOrderService:
