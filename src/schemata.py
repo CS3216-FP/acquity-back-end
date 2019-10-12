@@ -32,6 +32,7 @@ EMAIL_RULE = {"type": "string", "regex": EMAIL_REGEX}
 NONNEGATIVE_NUMBER_RULE = {"type": "number", "min": 0}
 OPTIONAL_NONNEGATIVE_NUMBER_RULE = {"type": "number", "min": 0, "required": False}
 LINKEDIN_CODE = {"type": "string", "required": True}
+LINKEDIN_TOKEN = {"type": "string", "required": True}
 
 
 USER_AUTH_SCHEMA = {"email": EMAIL_RULE, "password": {"type": "string", "minlength": 6}}
@@ -55,4 +56,5 @@ EDIT_SELL_ORDER_SCHEMA = {
 }
 DELETE_SELL_ORDER_SCHEMA = {"id": UUID_RULE, "subject_id": UUID_RULE}
 
-LINKEDIN_USER_DATA_SCHEMA = {"code": LINKEDIN_CODE}
+LINKEDIN_CODE_RULE = {"code": LINKEDIN_CODE}
+LINKEDIN_TOKEN_RULE = {"token": LINKEDIN_TOKEN}

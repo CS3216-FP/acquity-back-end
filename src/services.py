@@ -13,7 +13,8 @@ from src.schemata import (
     INVITE_SCHEMA,
     USER_AUTH_SCHEMA,
     UUID_RULE,
-    LINKEDIN_CODE,
+    LINKEDIN_CODE_RULE,
+    LINKEDIN_TOKEN_RULE,
     validate_input,
 )
 import requests
@@ -49,6 +50,7 @@ class UserService:
             user.can_buy = True
             session.commit()
             result = user.asdict()
+        result.pop("hashed_password")
         return result;
 
     @validate_input(INVITE_SCHEMA)
@@ -158,7 +160,7 @@ class LinkedinService:
     def __init__(self, User=User):
         self.User = User
     
-    # @validate_input(LINKEDIN_CODE)
+    @validate_input(LINKEDIN_CODE_RULE)
     def get_user_data(self, code):
         token = self.get_token(code)
         user_email = self.get_user_email(token)
