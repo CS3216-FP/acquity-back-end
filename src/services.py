@@ -2,6 +2,7 @@ import datetime
 
 from passlib.hash import argon2
 
+from src.config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI
 from src.database import Security, SellOrder, User, session_scope
 from src.exceptions import UnauthorizedException
 from src.schemata import (
@@ -12,9 +13,10 @@ from src.schemata import (
     INVITE_SCHEMA,
     USER_AUTH_SCHEMA,
     UUID_RULE,
+    LINKEDIN_CODE,
     validate_input,
 )
-
+import requests
 
 class UserService:
     def __init__(self, User=User, hasher=argon2):
@@ -143,3 +145,44 @@ class SecurityService:
     def get_all(self):
         with session_scope() as session:
             return [sec.asdict() for sec in session.query(self.Security).all()]
+
+
+class LinkedinService:
+    def __init__(self, User=User):
+        self.User = User
+    
+    # @validate_input(LINKEDIN_CODE)
+    def get_user_data(self, code):
+        token = self.get_token(code)
+        user_email = self.get_user_email(token)
+        user_data = {
+            "user_email": user_email
+        }
+        return user_data
+
+    def get_token(self, code):
+        token = requests.post(
+            "https://www.linkedin.com/oauth/v2/accessToken",
+            headers={"Content-Type": "x-www-form-urlencoded"},
+            params={
+                "grant_type": "authorization_code",
+                "code": code,
+                "redirect_uri": REDIRECT_URI,
+                "client_id": CLIENT_ID,
+                "client_secret": CLIENT_SECRET,
+                }).json()
+        return token.get("access_token")
+    
+    def get_user_profile(self, token):
+        user_profile = requests.get(
+            "https://api.linkedin.com/v2/me",
+            headers={'Authorization': 'Bearer ' + token}
+            ).json()
+        return user_profile.get("localizedFirstName") + " " + user_profile.get("localizedLastName")
+
+    def get_user_email(self, token):
+        user_email = requests.get(
+            "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
+            headers={'Authorization': 'Bearer ' + token}
+            ).json()
+        return user_email.get("elements")[0].get("handle~").get("emailAddress")
