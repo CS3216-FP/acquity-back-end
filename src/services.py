@@ -1,5 +1,6 @@
 import datetime
 
+import requests
 from passlib.hash import argon2
 
 from src.config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI
@@ -11,13 +12,13 @@ from src.schemata import (
     DELETE_SELL_ORDER_SCHEMA,
     EDIT_SELL_ORDER_SCHEMA,
     INVITE_SCHEMA,
-    USER_AUTH_SCHEMA,
-    UUID_RULE,
     LINKEDIN_CODE_RULE,
     LINKEDIN_TOKEN_RULE,
+    USER_AUTH_SCHEMA,
+    UUID_RULE,
     validate_input,
 )
-import requests
+
 
 class UserService:
     def __init__(self, User=User, hasher=argon2):
@@ -51,7 +52,7 @@ class UserService:
             session.commit()
             result = user.asdict()
         result.pop("hashed_password")
-        return result;
+        return result
 
     @validate_input(INVITE_SCHEMA)
     def invite_to_be_seller(self, inviter_id, invited_id):
@@ -89,7 +90,7 @@ class UserService:
     def get_user_id(self, user_email):
         with session_scope() as session:
             user = session.query(self.User).filter_by(email=user_email).one().asdict()
-        return {"user_id": user.get("id") }
+        return {"user_id": user.get("id")}
 
 
 class SellOrderService:
@@ -159,14 +160,12 @@ class SecurityService:
 class LinkedinService:
     def __init__(self, User=User):
         self.User = User
-    
+
     @validate_input(LINKEDIN_CODE_RULE)
     def get_user_data(self, code):
         token = self.get_token(code)
         user_email = self.get_user_email(token)
-        user_data = {
-            "user_email": user_email
-        }
+        user_data = {"user_email": user_email}
         return user_data
 
     def get_token(self, code):
@@ -179,19 +178,24 @@ class LinkedinService:
                 "redirect_uri": REDIRECT_URI,
                 "client_id": CLIENT_ID,
                 "client_secret": CLIENT_SECRET,
-                }).json()
+            },
+        ).json()
         return token.get("access_token")
-    
+
     def get_user_profile(self, token):
         user_profile = requests.get(
             "https://api.linkedin.com/v2/me",
-            headers={'Authorization': 'Bearer ' + token}
-            ).json()
-        return user_profile.get("localizedFirstName") + " " + user_profile.get("localizedLastName")
+            headers={"Authorization": "Bearer " + token},
+        ).json()
+        return (
+            user_profile.get("localizedFirstName")
+            + " "
+            + user_profile.get("localizedLastName")
+        )
 
     def get_user_email(self, token):
         user_email = requests.get(
             "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
-            headers={'Authorization': 'Bearer ' + token}
-            ).json()
+            headers={"Authorization": "Bearer " + token},
+        ).json()
         return user_email.get("elements")[0].get("handle~").get("emailAddress")

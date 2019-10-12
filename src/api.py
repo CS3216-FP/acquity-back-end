@@ -2,8 +2,9 @@ from sanic import Blueprint
 from sanic.response import json
 from sanic_jwt.decorators import inject_user, protected
 from sanic_jwt.exceptions import AuthenticationFailed
-from src.utils import expects_json_object
+
 from src.services import UserService
+from src.utils import expects_json_object
 
 blueprint = Blueprint("root", version="v1")
 
@@ -89,5 +90,7 @@ async def get_all_securities(request):
 async def create_user_linkedin(request):
     user_data = request.app.linkedin_service.get_user_data(**request.json)
     user_id = request.app.user_service.get_user_id(**user_data)
-    user_data_buyer_priviledges = request.app.user_service.activate_buy_privileges(**user_id)
+    user_data_buyer_priviledges = request.app.user_service.activate_buy_privileges(
+        **user_id
+    )
     return json(user_data_buyer_priviledges)
