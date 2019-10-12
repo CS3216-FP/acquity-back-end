@@ -3,7 +3,7 @@ import datetime
 import requests
 from passlib.hash import argon2
 
-from src.config import CLIENT_ID, CLIENT_SECRET, REDIRECT_URI
+from src.config import APP_CONFIG
 from src.database import Security, SellOrder, User, session_scope
 from src.exceptions import UnauthorizedException
 from src.schemata import (
@@ -13,7 +13,6 @@ from src.schemata import (
     EDIT_SELL_ORDER_SCHEMA,
     INVITE_SCHEMA,
     LINKEDIN_CODE_RULE,
-    LINKEDIN_TOKEN_RULE,
     USER_AUTH_SCHEMA,
     UUID_RULE,
     validate_input,
@@ -175,9 +174,9 @@ class LinkedinService:
             params={
                 "grant_type": "authorization_code",
                 "code": code,
-                "redirect_uri": REDIRECT_URI,
-                "client_id": CLIENT_ID,
-                "client_secret": CLIENT_SECRET,
+                "redirect_uri": APP_CONFIG.get("REDIRECT_URI"),
+                "client_id": APP_CONFIG.get("CLIENT_ID"),
+                "client_secret": APP_CONFIG.get("CLIENT_SECRET"),
             },
         ).json()
         return token.get("access_token")
@@ -185,7 +184,7 @@ class LinkedinService:
     def get_user_profile(self, token):
         user_profile = requests.get(
             "https://api.linkedin.com/v2/me",
-            headers={"Authorization": "Bearer " + token},
+            headers={"Authorization": f"Bearer {token}"},
         ).json()
         return (
             user_profile.get("localizedFirstName")
@@ -196,6 +195,6 @@ class LinkedinService:
     def get_user_email(self, token):
         user_email = requests.get(
             "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
-            headers={"Authorization": "Bearer " + token},
+            headers={"Authorization": f"Bearer {token}"},
         ).json()
         return user_email.get("elements")[0].get("handle~").get("emailAddress")

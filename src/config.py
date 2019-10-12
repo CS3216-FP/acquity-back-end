@@ -5,10 +5,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-CLIENT_ID = os.getenv("CLIENT_ID")
-CLIENT_SECRET = os.getenv("CLIENT_SECRET")
-REDIRECT_URI = os.getenv("REDIRECT_URI")
-
 ACQUITY_ENV = getenv("ACQUITY_ENV")
 DEFAULT_DATABASE_URL = ""
 if ACQUITY_ENV == "DEVELOPMENT":
@@ -26,4 +22,7 @@ APP_CONFIG = {
         "JWT_SECRET",
         "secret" if getenv("ACQUITY_ENV") in ["DEVELOPMENT", "TEST"] else "",
     ),
+    "CLIENT_ID": os.getenv("CLIENT_ID"),
+    "CLIENT_SECRET": os.getenv("CLIENT_SECRET"),
+    "REDIRECT_URI": os.getenv("REDIRECT_URI"),
 }
