@@ -11,8 +11,10 @@ from src.schemata import (
     CREATE_USER_SCHEMA,
     DELETE_SELL_ORDER_SCHEMA,
     EDIT_SELL_ORDER_SCHEMA,
+    EMAIL_RULE,
     INVITE_SCHEMA,
     LINKEDIN_CODE_RULE,
+    LINKEDIN_TOKEN_RULE,
     USER_AUTH_SCHEMA,
     UUID_RULE,
     validate_input,
@@ -44,7 +46,6 @@ class UserService:
 
     @validate_input({"user_id": UUID_RULE})
     def activate_buy_privileges(self, user_id):
-        print(user_id)
         with session_scope() as session:
             user = session.query(self.User).filter_by(id=user_id).one()
             user.can_buy = True
@@ -86,10 +87,12 @@ class UserService:
         user.pop("hashed_password")
         return user
 
-    def get_user_id(self, user_email):
+    @validate_input({"email": EMAIL_RULE})
+    def get_user_by_email(self, email):
         with session_scope() as session:
-            user = session.query(self.User).filter_by(email=user_email).one().asdict()
-        return {"user_id": user.get("id")}
+            user = session.query(self.User).filter_by(email=email).one().asdict()
+        user.pop("hashed_password")
+        return user
 
 
 class SellOrderService:
@@ -161,40 +164,39 @@ class LinkedinService:
         self.User = User
 
     @validate_input(LINKEDIN_CODE_RULE)
-    def get_user_data(self, code):
-        token = self.get_token(code)
-        user_email = self.get_user_email(token)
-        user_data = {"user_email": user_email}
-        return user_data
+    def get_user_data(self, code, redirect_uri):
+        token = self.get_token(code=code, redirect_uri=redirect_uri)
+        return self.get_user_email(**token)
 
-    def get_token(self, code):
+    @validate_input(LINKEDIN_CODE_RULE)
+    def get_token(self, code, redirect_uri):
         token = requests.post(
             "https://www.linkedin.com/oauth/v2/accessToken",
             headers={"Content-Type": "x-www-form-urlencoded"},
             params={
                 "grant_type": "authorization_code",
                 "code": code,
-                "redirect_uri": APP_CONFIG.get("REDIRECT_URI"),
+                "redirect_uri": redirect_uri,
                 "client_id": APP_CONFIG.get("CLIENT_ID"),
                 "client_secret": APP_CONFIG.get("CLIENT_SECRET"),
             },
         ).json()
-        return token.get("access_token")
+        return {"token": token.get("access_token")}
 
+    @validate_input(LINKEDIN_TOKEN_RULE)
     def get_user_profile(self, token):
         user_profile = requests.get(
             "https://api.linkedin.com/v2/me",
             headers={"Authorization": f"Bearer {token}"},
         ).json()
-        return (
-            user_profile.get("localizedFirstName")
-            + " "
-            + user_profile.get("localizedLastName")
-        )
+        first_name = user_profile.get("localizedFirstName")
+        last_name = user_profile.get("localizedLastName")
+        return {"full_name": f"{first_name} {last_name}"}
 
+    @validate_input(LINKEDIN_TOKEN_RULE)
     def get_user_email(self, token):
-        user_email = requests.get(
+        email = requests.get(
             "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
             headers={"Authorization": f"Bearer {token}"},
         ).json()
-        return user_email.get("elements")[0].get("handle~").get("emailAddress")
+        return {"email": email.get("elements")[0].get("handle~").get("emailAddress")}

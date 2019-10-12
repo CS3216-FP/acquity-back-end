@@ -1,4 +1,3 @@
-import os
 from os import getenv
 
 from dotenv import load_dotenv
@@ -22,7 +21,6 @@ APP_CONFIG = {
         "JWT_SECRET",
         "secret" if getenv("ACQUITY_ENV") in ["DEVELOPMENT", "TEST"] else "",
     ),
-    "CLIENT_ID": os.getenv("CLIENT_ID"),
-    "CLIENT_SECRET": os.getenv("CLIENT_SECRET"),
-    "REDIRECT_URI": os.getenv("REDIRECT_URI"),
+    "CLIENT_ID": getenv("CLIENT_ID"),
+    "CLIENT_SECRET": getenv("CLIENT_SECRET"),
 }
