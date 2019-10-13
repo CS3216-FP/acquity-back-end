@@ -62,3 +62,8 @@ LINKEDIN_MATCH_EMAILS_SCHEMA = {
     "user_email": {"type": "string", "required": True},
     "linkedin_email": {"type": "string", "required": True},
 }
+LINKEDIN_BUYER_PRIVILEGES_SCHEMA = {
+    "code": {"type": "string", "required": True},
+    "redirect_uri": {"type": "string", "required": True},
+    "user_email": {"type": "string", "required": True},
+}

@@ -14,8 +14,9 @@ from src.schemata import (
     EMAIL_RULE,
     INVITE_SCHEMA,
     LINKEDIN_CODE_SCHEMA,
-    LINKEDIN_MATCH_EMAILS_SCHEMA,
     LINKEDIN_TOKEN_SCHEMA,
+    LINKEDIN_MATCH_EMAILS_SCHEMA,
+    LINKEDIN_BUYER_PRIVILEGES_SCHEMA,
     USER_AUTH_SCHEMA,
     UUID_RULE,
     validate_input,
@@ -160,8 +161,21 @@ class SecurityService:
 
 
 class LinkedinService:
-    def __init__(self, User=User):
+    def __init__(self, User=User, UserService=UserService):
         self.User = User
+        self.UserService=UserService
+
+    @validate_input(LINKEDIN_BUYER_PRIVILEGES_SCHEMA)
+    def activate_buyer_privileges(self, code, redirect_uri, user_email):
+        user_data = self.get_user_data(code=code, redirect_uri=redirect_uri)
+        is_email = self.is_email_matched(linkedin_email=user_data.get("email"), user_email=user_email)
+        if (is_email):
+            user = self.UserService().get_user_by_email(email=user_email)
+            return self.UserService().activate_buy_privileges(user_id=user.get("id"))
+        else:
+            raise InvalidRequestException("Linkedin email does not match")
+
+
 
     @validate_input(LINKEDIN_CODE_SCHEMA)
     def get_user_data(self, code, redirect_uri):
@@ -202,7 +216,8 @@ class LinkedinService:
         return {"email": email.get("elements")[0].get("handle~").get("emailAddress")}
 
     @validate_input(LINKEDIN_MATCH_EMAILS_SCHEMA)
-    def is_email_matching(self, user_email, linkedin_email):
+    def is_email_matched(self, user_email, linkedin_email):
         if user_email != linkedin_email:
-            raise InvalidRequestException("Linkedin email does not match")
-        return True
+            return False
+        else:
+            return True

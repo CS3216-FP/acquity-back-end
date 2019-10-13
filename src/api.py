@@ -88,14 +88,5 @@ async def get_all_securities(request):
 @blueprint.post("/user/linkedin/")
 @auth_required
 async def create_user_linkedin(request, user):
-    user_data = request.app.linkedin_service.get_user_data(**request.json)
-    request.app.linkedin_service.is_email_matching(
-        **{"user_email": user.get("email"), "linkedin_email": user_data.get("email")}
-    )
-    user_id = {
-        "user_id": request.app.user_service.get_user_by_email(**user_data).get("id")
-    }
-    user_data_buyer_privileges = request.app.user_service.activate_buy_privileges(
-        **user_id
-    )
-    return json(user_data_buyer_privileges)
+    return json(request.app.linkedin_service.activate_buyer_privileges(
+        **request.json, user_email=user.get("email")))
