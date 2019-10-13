@@ -21,7 +21,7 @@ Setup/reset database (install Postgres first)
 ```
 Add the environmental variables CLIENT_ID and CLIENT_SECRET
 ```
-mv .env.default .env
+cp .env.default .env
 ```
 ## Run app
 ```

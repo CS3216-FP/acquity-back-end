@@ -3,7 +3,6 @@ from sanic.response import json
 from sanic_jwt.decorators import inject_user, protected
 from sanic_jwt.exceptions import AuthenticationFailed
 
-from src.config import APP_CONFIG
 from src.utils import expects_json_object
 
 blueprint = Blueprint("root", version="v1")
