@@ -5,7 +5,7 @@ from passlib.hash import argon2
 
 from src.config import APP_CONFIG
 from src.database import Security, SellOrder, User, session_scope
-from src.exceptions import UnauthorizedException
+from src.exceptions import UnauthorizedException, InvalidRequestException
 from src.schemata import (
     CREATE_SELL_ORDER_SCHEMA,
     CREATE_USER_SCHEMA,
@@ -15,6 +15,7 @@ from src.schemata import (
     INVITE_SCHEMA,
     LINKEDIN_CODE_RULE,
     LINKEDIN_TOKEN_RULE,
+    LINKEDIN_MATCH_EMAILS,
     USER_AUTH_SCHEMA,
     UUID_RULE,
     validate_input,
@@ -72,7 +73,6 @@ class UserService:
 
     @validate_input(USER_AUTH_SCHEMA)
     def authenticate(self, email, password):
-        print(email, password)
         with session_scope() as session:
             user = session.query(self.User).filter_by(email=email).one()
             if self.hasher.verify(password, user.hashed_password):
@@ -200,3 +200,9 @@ class LinkedinService:
             headers={"Authorization": f"Bearer {token}"},
         ).json()
         return {"email": email.get("elements")[0].get("handle~").get("emailAddress")}
+    
+    @validate_input(LINKEDIN_MATCH_EMAILS)
+    def is_email_matching(self, user_email, linkedin_email):
+        if (user_email != linkedin_email):
+            raise InvalidRequestException("Linkedin email does not match")
+        return True

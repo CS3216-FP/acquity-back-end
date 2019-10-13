@@ -58,3 +58,7 @@ LINKEDIN_CODE_RULE = {
     "redirect_uri": {"type": "string", "required": True},
 }
 LINKEDIN_TOKEN_RULE = {"token": {"type": "string", "required": True}}
+LINKEDIN_MATCH_EMAILS = {
+    "user_email": {"type": "string", "required": True},
+    "linkedin_email": {"type": "string", "required": True},
+}
