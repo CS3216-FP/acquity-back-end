@@ -5,7 +5,7 @@ from passlib.hash import argon2
 
 from src.config import APP_CONFIG
 from src.database import Security, SellOrder, User, session_scope
-from src.exceptions import UnauthorizedException, InvalidRequestException
+from src.exceptions import InvalidRequestException, UnauthorizedException
 from src.schemata import (
     CREATE_SELL_ORDER_SCHEMA,
     CREATE_USER_SCHEMA,
@@ -13,9 +13,9 @@ from src.schemata import (
     EDIT_SELL_ORDER_SCHEMA,
     EMAIL_RULE,
     INVITE_SCHEMA,
-    LINKEDIN_CODE_RULE,
-    LINKEDIN_TOKEN_RULE,
-    LINKEDIN_MATCH_EMAILS,
+    LINKEDIN_CODE_SCHEMA,
+    LINKEDIN_MATCH_EMAILS_SCHEMA,
+    LINKEDIN_TOKEN_SCHEMA,
     USER_AUTH_SCHEMA,
     UUID_RULE,
     validate_input,
@@ -163,12 +163,12 @@ class LinkedinService:
     def __init__(self, User=User):
         self.User = User
 
-    @validate_input(LINKEDIN_CODE_RULE)
+    @validate_input(LINKEDIN_CODE_SCHEMA)
     def get_user_data(self, code, redirect_uri):
         token = self.get_token(code=code, redirect_uri=redirect_uri)
         return self.get_user_email(**token)
 
-    @validate_input(LINKEDIN_CODE_RULE)
+    @validate_input(LINKEDIN_CODE_SCHEMA)
     def get_token(self, code, redirect_uri):
         token = requests.post(
             "https://www.linkedin.com/oauth/v2/accessToken",
@@ -183,7 +183,7 @@ class LinkedinService:
         ).json()
         return {"token": token.get("access_token")}
 
-    @validate_input(LINKEDIN_TOKEN_RULE)
+    @validate_input(LINKEDIN_TOKEN_SCHEMA)
     def get_user_profile(self, token):
         user_profile = requests.get(
             "https://api.linkedin.com/v2/me",
@@ -193,16 +193,16 @@ class LinkedinService:
         last_name = user_profile.get("localizedLastName")
         return {"full_name": f"{first_name} {last_name}"}
 
-    @validate_input(LINKEDIN_TOKEN_RULE)
+    @validate_input(LINKEDIN_TOKEN_SCHEMA)
     def get_user_email(self, token):
         email = requests.get(
             "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
             headers={"Authorization": f"Bearer {token}"},
         ).json()
         return {"email": email.get("elements")[0].get("handle~").get("emailAddress")}
-    
-    @validate_input(LINKEDIN_MATCH_EMAILS)
+
+    @validate_input(LINKEDIN_MATCH_EMAILS_SCHEMA)
     def is_email_matching(self, user_email, linkedin_email):
-        if (user_email != linkedin_email):
+        if user_email != linkedin_email:
             raise InvalidRequestException("Linkedin email does not match")
         return True

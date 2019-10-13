@@ -53,12 +53,12 @@ EDIT_SELL_ORDER_SCHEMA = {
 }
 DELETE_SELL_ORDER_SCHEMA = {"id": UUID_RULE, "subject_id": UUID_RULE}
 
-LINKEDIN_CODE_RULE = {
+LINKEDIN_CODE_SCHEMA = {
     "code": {"type": "string", "required": True},
     "redirect_uri": {"type": "string", "required": True},
 }
-LINKEDIN_TOKEN_RULE = {"token": {"type": "string", "required": True}}
-LINKEDIN_MATCH_EMAILS = {
+LINKEDIN_TOKEN_SCHEMA = {"token": {"type": "string", "required": True}}
+LINKEDIN_MATCH_EMAILS_SCHEMA = {
     "user_email": {"type": "string", "required": True},
     "linkedin_email": {"type": "string", "required": True},
 }
