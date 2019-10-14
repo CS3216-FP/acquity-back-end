@@ -167,10 +167,8 @@ class LinkedinService:
 
     @validate_input(LINKEDIN_BUYER_PRIVILEGES_SCHEMA)
     def activate_buyer_privileges(self, code, redirect_uri, user_email):
-        user_data = self.get_user_data(code=code, redirect_uri=redirect_uri)
-        is_email = self.is_email_matched(
-            linkedin_email=user_data.get("email"), user_email=user_email
-        )
+        linkedin_email = self.get_user_data(code=code, redirect_uri=redirect_uri)
+        is_email = self.is_match(linkedin_email=linkedin_email, user_email=user_email)
         if is_email:
             user = self.UserService().get_user_by_email(email=user_email)
             return self.UserService().activate_buy_privileges(user_id=user.get("id"))
@@ -180,7 +178,7 @@ class LinkedinService:
     @validate_input(LINKEDIN_CODE_SCHEMA)
     def get_user_data(self, code, redirect_uri):
         token = self.get_token(code=code, redirect_uri=redirect_uri)
-        return self.get_user_email(**token)
+        return self.get_user_email(token=token)
 
     @validate_input(LINKEDIN_CODE_SCHEMA)
     def get_token(self, code, redirect_uri):
@@ -195,7 +193,7 @@ class LinkedinService:
                 "client_secret": APP_CONFIG.get("CLIENT_SECRET"),
             },
         ).json()
-        return {"token": token.get("access_token")}
+        return token.get("access_token")
 
     @validate_input(LINKEDIN_TOKEN_SCHEMA)
     def get_user_profile(self, token):
@@ -213,11 +211,8 @@ class LinkedinService:
             "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
             headers={"Authorization": f"Bearer {token}"},
         ).json()
-        return {"email": email.get("elements")[0].get("handle~").get("emailAddress")}
+        return email.get("elements")[0].get("handle~").get("emailAddress")
 
     @validate_input(LINKEDIN_MATCH_EMAILS_SCHEMA)
-    def is_email_matched(self, user_email, linkedin_email):
-        if user_email != linkedin_email:
-            return False
-        else:
-            return True
+    def is_match(self, user_email, linkedin_email):
+        return True if user_email == linkedin_email else False
