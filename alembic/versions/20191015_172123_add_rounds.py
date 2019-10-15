@@ -1,8 +1,8 @@
 """Add rounds
 
-Revision ID: 93f5eb1de721
+Revision ID: ff31f1d3c98d
 Revises: 28f0b17593fb
-Create Date: 2019-10-15 16:24:25.209509
+Create Date: 2019-10-15 17:21:23.939060
 
 """
 import sqlalchemy as sa
@@ -11,7 +11,7 @@ from sqlalchemy.dialects import postgresql
 from alembic import op
 
 # revision identifiers, used by Alembic.
-revision = "93f5eb1de721"
+revision = "ff31f1d3c98d"
 down_revision = "28f0b17593fb"
 branch_labels = None
 depends_on = None
@@ -38,12 +38,10 @@ def upgrade():
         sa.Column("is_concluded", sa.Boolean(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.add_column(
-        "buy_orders", sa.Column("round_id", postgresql.UUID(), nullable=False)
-    )
+    op.add_column("buy_orders", sa.Column("round_id", postgresql.UUID(), nullable=True))
     op.create_foreign_key(None, "buy_orders", "rounds", ["round_id"], ["id"])
     op.add_column(
-        "sell_orders", sa.Column("round_id", postgresql.UUID(), nullable=False)
+        "sell_orders", sa.Column("round_id", postgresql.UUID(), nullable=True)
     )
     op.create_foreign_key(None, "sell_orders", "rounds", ["round_id"], ["id"])
     # ### end Alembic commands ###

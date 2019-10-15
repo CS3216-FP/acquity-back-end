@@ -72,7 +72,7 @@ class SellOrder(Base):
     security_id = Column(UUID, ForeignKey("securities.id"), nullable=False)
     number_of_shares = Column(Float, nullable=False)
     price = Column(Float, nullable=False)
-    round_id = Column(UUID, ForeignKey("rounds.id"), nullable=False)
+    round_id = Column(UUID, ForeignKey("rounds.id"))
 
     user = relationship("User", back_populates="sell_orders")
     matches = relationship("Match", back_populates="sell_order")
@@ -87,7 +87,7 @@ class BuyOrder(Base):
     security_id = Column(UUID, ForeignKey("securities.id"), nullable=False)
     number_of_shares = Column(Float, nullable=False)
     price = Column(Float, nullable=False)
-    round_id = Column(UUID, ForeignKey("rounds.id"), nullable=False)
+    round_id = Column(UUID, ForeignKey("rounds.id"))
 
     user = relationship("User", back_populates="buy_orders")
     matches = relationship("Match", back_populates="buy_order")
