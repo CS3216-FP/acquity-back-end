@@ -22,12 +22,12 @@ from src.services import (
 app = Sanic(load_env=False)
 app.config.update(APP_CONFIG)
 
-app.user_service = UserService(app)
-app.linkedin_service = LinkedinService(app)
-app.sell_order_service = SellOrderService(app)
-app.buy_order_service = BuyOrderService(app)
-app.security_service = SecurityService(app)
-app.round_service = RoundService(app)
+app.user_service = UserService(app.config)
+app.linkedin_service = LinkedinService(app.config)
+app.sell_order_service = SellOrderService(app.config)
+app.buy_order_service = BuyOrderService(app.config)
+app.security_service = SecurityService(app.config)
+app.round_service = RoundService(app.config)
 
 initialize_cors(app)
 
