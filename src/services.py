@@ -150,10 +150,11 @@ class LinkedinService(DefaultService):
 
 
 class SellOrderService(DefaultService):
-    def __init__(self, config, SellOrder=SellOrder, User=User):
+    def __init__(self, config, SellOrder=SellOrder, User=User, Round=Round):
         super().__init__(config)
         self.SellOrder = SellOrder
         self.User = User
+        self.Round = Round
 
     @validate_input(CREATE_ORDER_SCHEMA)
     def create_order(self, user_id, number_of_shares, price, security_id):
@@ -162,36 +163,21 @@ class SellOrderService(DefaultService):
             if not user.can_sell:
                 raise UnauthorizedException("This user cannot sell securities.")
 
+            sell_order = self.SellOrder(
+                user_id=user_id,
+                number_of_shares=number_of_shares,
+                price=price,
+                security_id=security_id,
+            )
+
             active_round = RoundService(self.config).get_active()
             if active_round is None:
-                sell_order = self.SellOrder(
-                    user_id=user_id,
-                    number_of_shares=number_of_shares,
-                    price=price,
-                    security_id=security_id,
-                )
-
                 session.add(sell_order)
                 session.commit()
-
                 if RoundService(self.config).should_round_start():
-                    new_round = self.Round(
-                        end_time=datetime.now() + self.config["ACQUITY_ROUND_LENGTH"],
-                        is_concluded=False,
-                    )
-                    session.add(new_round)
-                    session.flush()
-                    sell_order.order_id = new_round.id
-
+                    self._set_orders_to_new_round()
             else:
-                sell_order = self.SellOrder(
-                    user_id=user_id,
-                    number_of_shares=number_of_shares,
-                    price=price,
-                    security_id=security_id,
-                    round_id=active_round["id"],
-                )
-
+                sell_order.round_id = active_round["id"]
                 session.add(sell_order)
 
             session.commit()
@@ -227,6 +213,18 @@ class SellOrderService(DefaultService):
 
             session.delete(sell_order)
         return {}
+
+    def _set_orders_to_new_round(self):
+        with session_scope() as session:
+            new_round = self.Round(
+                end_time=datetime.now() + self.config["ACQUITY_ROUND_LENGTH"],
+                is_concluded=False,
+            )
+            session.add(new_round)
+            session.flush()
+
+            for sell_order in session.query(self.SellOrder).filter_by(round_id=None):
+                sell_order.round_id = str(new_round.id)
 
 
 class BuyOrderService(DefaultService):

@@ -186,9 +186,7 @@ def test_edit_order():
             session.query(BuyOrder).filter_by(id=buy_order_id).one().asdict()
         )
 
-    new_buy_order_params = buy_order_params
-    new_buy_order_params["number_of_shares"] = 50
-    assert_dict_in(new_buy_order_params, new_buy_order)
+    assert_dict_in({**buy_order_params, "number_of_shares": 50}, new_buy_order)
 
 
 def test_delete_order():
