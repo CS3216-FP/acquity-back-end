@@ -1,13 +1,12 @@
-import datetime
-
 import pytest
 
+from src.config import APP_CONFIG
 from src.database import Security, SellOrder, User, session_scope
 from src.exceptions import UnauthorizedException
 from src.services import SellOrderService
 from tests.utils import assert_dict_in
 
-sell_order_service = SellOrderService(SellOrder=SellOrder)
+sell_order_service = SellOrderService(config=APP_CONFIG, SellOrder=SellOrder)
 
 
 def test_get_orders_by_user():
