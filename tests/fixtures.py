@@ -14,7 +14,7 @@ from src.database import (
 def attributes_for_user(id="", **kwargs):
     return {
         "email": f"a{id}@a",
-        "hashed_password": f"a{id}",
+        "hashed_password": f"abcdef{id}",
         "full_name": f"a{id}",
         "can_buy": True,
         "can_sell": True,
