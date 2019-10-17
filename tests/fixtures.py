@@ -11,6 +11,15 @@ from src.database import (
 )
 
 
+def combine_dicts(original, default_boxed):
+    res = original.copy()
+    for k, box_value in default_boxed.items():
+        if k not in original:
+            res[k] = box_value()
+
+    return res
+
+
 def attributes_for_user(id="", **kwargs):
     return {
         "email": f"a{id}@a",
@@ -65,11 +74,16 @@ def create_security(id="", **kwargs):
 def create_sell_order(id=0, **kwargs):
     with session_scope() as session:
         sell_order = SellOrder(
-            user_id=create_user(id, **kwargs)["id"],
-            security_id=create_security(id, **kwargs)["id"],
-            round_id=create_round(id, **kwargs)["id"],
-            **attributes_for_sell_order(id, **kwargs),
+            **combine_dicts(
+                attributes_for_sell_order(id, **kwargs),
+                {
+                    "user_id": lambda: create_user(id)["id"],
+                    "security_id": lambda: create_security(id)["id"],
+                    "round_id": lambda: create_round(id)["id"],
+                },
+            )
         )
+
         session.add(sell_order)
         session.commit()
         return sell_order.asdict()
@@ -78,11 +92,16 @@ def create_sell_order(id=0, **kwargs):
 def create_buy_order(id=0, **kwargs):
     with session_scope() as session:
         buy_order = BuyOrder(
-            user_id=create_user(id, **kwargs)["id"],
-            security_id=create_security(id, **kwargs)["id"],
-            round_id=create_round(id, **kwargs)["id"],
-            **attributes_for_buy_order(id, **kwargs),
+            **combine_dicts(
+                attributes_for_buy_order(id, **kwargs),
+                {
+                    "user_id": lambda: create_user(id)["id"],
+                    "security_id": lambda: create_security(id)["id"],
+                    "round_id": lambda: create_round(id)["id"],
+                },
+            )
         )
+
         session.add(buy_order)
         session.commit()
         return buy_order.asdict()
@@ -90,10 +109,19 @@ def create_buy_order(id=0, **kwargs):
 
 def create_match(id=0, **kwargs):
     with session_scope() as session:
+        buy_order_id = kwargs.get("buy_order_id") or create_buy_order(id)["id"]
+        sell_order_id = kwargs.get("sell_order_id") or create_sell_order(id)["id"]
+        for key in ["buy_order_id", "sell_order_id"]:
+            kwargs.pop(key)
+
         match = Match(
-            buy_order_id=create_buy_order(id, **kwargs)["id"],
-            sell_order_Id=create_sell_order(id, **kwargs)["id"],
-            **attributes_for_match(id, **kwargs),
+            **combine_dicts(
+                attributes_for_match(id, **kwargs),
+                {
+                    "buy_order_id": lambda: create_buy_order(id)["id"],
+                    "sell_order_id": lambda: create_sell_order(id)["id"],
+                },
+            )
         )
         session.add(match)
         session.commit()
