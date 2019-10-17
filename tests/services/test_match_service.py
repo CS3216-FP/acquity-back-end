@@ -83,4 +83,4 @@ def test_run_matches():
         assert match.buy_order_id == buy_order_id
         assert match.sell_order_id == sell_order_id
 
-        assert session.query(Round).get(round_dict['id']).is_concluded
+        assert session.query(Round).get(round_dict["id"]).is_concluded
