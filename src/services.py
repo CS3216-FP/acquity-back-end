@@ -2,6 +2,7 @@ from datetime import datetime
 
 import requests
 from passlib.hash import argon2
+from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
 
 from src.database import BuyOrder, Round, Security, SellOrder, User, session_scope
@@ -94,8 +95,11 @@ class UserService(DefaultService):
     def get_user(self, id):
         with session_scope() as session:
             user = session.query(self.User).get(id)
-        user.pop("hashed_password")
-        return user
+            if user is None:
+                raise NoResultFound
+            user_dict = user.asdict()
+        user_dict.pop("hashed_password")
+        return user_dict
 
     @validate_input({"email": EMAIL_RULE})
     def get_user_by_email(self, email):
