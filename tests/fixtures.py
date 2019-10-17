@@ -109,11 +109,6 @@ def create_buy_order(id=0, **kwargs):
 
 def create_match(id=0, **kwargs):
     with session_scope() as session:
-        buy_order_id = kwargs.get("buy_order_id") or create_buy_order(id)["id"]
-        sell_order_id = kwargs.get("sell_order_id") or create_sell_order(id)["id"]
-        for key in ["buy_order_id", "sell_order_id"]:
-            kwargs.pop(key)
-
         match = Match(
             **combine_dicts(
                 attributes_for_match(id, **kwargs),

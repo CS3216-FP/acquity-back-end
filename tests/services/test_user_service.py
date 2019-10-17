@@ -37,7 +37,7 @@ def test_authenticate():
     user = user_service.authenticate(
         email=user_params["email"], password=user_params["hashed_password"]
     )
-    assert_dict_in(user_params, user)
+    assert user_params == user
 
 
 def test_invite_to_be_seller__unauthorized():
@@ -68,7 +68,7 @@ def test_get_user():
     user = user_service.get_user(id=user_id)
 
     user_params.pop("hashed_password")
-    assert_dict_in(user_params, user)
+    assert user_params == user
 
     with pytest.raises(NoResultFound):
         user_service.get_user(id="00000000-0000-0000-0000-000000000000")
