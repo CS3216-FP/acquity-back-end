@@ -8,9 +8,9 @@ load_dotenv()
 ACQUITY_ENV = getenv("ACQUITY_ENV")
 DEFAULT_DATABASE_URL = ""
 if ACQUITY_ENV == "DEVELOPMENT":
-    DEFAULT_DATABASE_URL = "postgresql://acquity:acquity@localhost/acquity"
+    DEFAULT_DATABASE_URL = "postgresql://acquity:acquity@localhost:5433/acquity"
 elif ACQUITY_ENV == "TEST":
-    DEFAULT_DATABASE_URL = "postgresql://acquity:acquity@localhost/acquity_test"
+    DEFAULT_DATABASE_URL = "postgresql://acquity:acquity@localhost:5433/acquity_test"
 
 APP_CONFIG = {
     "DATABASE_URL": getenv("DATABASE_URL", DEFAULT_DATABASE_URL),
