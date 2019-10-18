@@ -8,13 +8,15 @@ from sqlalchemy import (
     Float,
     ForeignKey,
     String,
+    Binary,
+    Text,
     create_engine,
     func,
+    UniqueConstraint
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
-
 from src.config import APP_CONFIG
 
 _base = declarative_base()
@@ -103,13 +105,31 @@ class Match(Base):
     buy_order = relationship("BuyOrder", back_populates="matches")
     sell_order = relationship("SellOrder", back_populates="matches")
 
+
 class ChatRoom(Base):
     __tablename__ = "chat_room"
-    seller_id = Column(UUID, ForeignKey("users.id"), nullable=False, primary_key=True)
-    buyer_id = Column(UUID, ForeignKey("users.id"), nullable=False, primary_key=True)
+
+    seller_id = Column(UUID, ForeignKey("users.id"), nullable=False)
+    buyer_id = Column(UUID, ForeignKey("users.id"), nullable=False)
 
     seller = relationship("User", foreign_keys=[seller_id], back_populates="seller")
     buyer = relationship("User", foreign_keys=[buyer_id], back_populates="buyer")
+    room = relationship("Chat", back_populates="room")
+
+    __table_args__ = (
+        UniqueConstraint('seller_id','buyer_id'),
+        )    
+
+
+class Chat(Base):
+    __tablename__ = "chat"
+
+    chat_room_id = Column(UUID, ForeignKey("chat_room.id"), nullable=False)
+    text = Column(Text)
+    img = Column(Binary)
+    chat_type = Column(String)
+
+    room = relationship("ChatRoom", back_populates="room")
 
 
 engine = create_engine(APP_CONFIG["DATABASE_URL"])
