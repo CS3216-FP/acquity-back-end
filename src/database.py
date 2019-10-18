@@ -54,7 +54,8 @@ class User(Base):
 
     sell_orders = relationship("SellOrder", back_populates="user")
     buy_orders = relationship("BuyOrder", back_populates="user")
-
+    #seller = relationship("ChatRoom", foreign_keys='ChatRoom.seller_id', back_populates="seller")
+    #buyer = relationship("ChatRoom", foreign_keys='ChatRoom.buyer_id', back_populates="buyer")
 
 class Security(Base):
     __tablename__ = "securities"
@@ -101,7 +102,15 @@ class Match(Base):
 
     buy_order = relationship("BuyOrder", back_populates="matches")
     sell_order = relationship("SellOrder", back_populates="matches")
+"""
+class ChatRoom(Base):
+    __tablename__ = "chat_room"
+    seller_id = Column(UUID, ForeignKey("users.id"), nullable=False, primary_key=True)
+    buyer_id = Column(UUID, ForeignKey("users.id"), nullable=False, primary_key=True)
 
+    seller = relationship("User", foreign_keys=[seller_id], back_populates="seller")
+    buyer = relationship("User", foreign_keys=[buyer_id], back_populates="buyer")
+"""
 
 engine = create_engine(APP_CONFIG["DATABASE_URL"])
 
