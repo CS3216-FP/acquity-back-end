@@ -1,6 +1,6 @@
 from passlib.hash import argon2
 import uuid
-from src.database import Security, User, session_scope, ChatRoom
+from src.database import Security, User, session_scope, ChatRoom, Chat
 
 
 def seed_db():
@@ -31,6 +31,14 @@ def seed_db():
             ChatRoom(
                 seller_id=str(ben_id),
                 buyer_id=str(brandon_id),
+            )
+        )
+        chat_room_id = getattr(session.query(ChatRoom).filter_by(seller_id=str(ben_id)).first(), "id")
+        session.add(
+            Chat(
+                chat_room_id=str(chat_room_id),
+                text="hello world",
+                chat_type="text"
             )
         )
         if session.query(Security).filter_by(name="Grab").count() == 0:
