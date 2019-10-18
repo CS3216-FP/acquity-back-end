@@ -34,6 +34,26 @@ def test_get_orders_by_user():
     )
 
 
+def test_get_order_by_id():
+    buy_order = create_buy_order()
+
+    order_retrieved = buy_order_service.get_order_by_id(
+        id=buy_order["id"], user_id=buy_order["user_id"]
+    )
+    assert order_retrieved["id"] == buy_order["id"]
+
+
+def test_get_order_by_id__unauthorized():
+    buy_order = create_buy_order()
+    user_id = buy_order["user_id"]
+    false_user_id = ("1" if user_id[0] == "0" else "0") + user_id[1:]
+
+    with pytest.raises(ResourceNotOwnedException):
+        order_retrieved = buy_order_service.get_order_by_id(
+            id=buy_order["id"], user_id=false_user_id
+        )
+
+
 def test_create_order__authorized():
     user_id = create_user()["id"]
     security_id = create_security()["id"]
