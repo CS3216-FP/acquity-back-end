@@ -1,5 +1,5 @@
 import traceback
-
+from sanic_cors import CORS, cross_origin
 from sanic import Blueprint, Sanic
 from sanic.exceptions import SanicException
 from sanic.response import json
@@ -11,6 +11,8 @@ from src.api import blueprint, user_login
 from src.config import APP_CONFIG
 from src.exceptions import AcquityException
 from src.services import LinkedinService, SecurityService, SellOrderService, UserService
+import socketio
+import engineio
 
 app = Sanic(load_env=False)
 app.config.update(APP_CONFIG)
@@ -20,8 +22,22 @@ app.sell_order_service = SellOrderService()
 app.security_service = SecurityService()
 app.linkedin_service = LinkedinService()
 
+
+sio = socketio.AsyncServer(async_mode='sanic', cors_allowed_origins=[])
+sio.attach(app)
+app.config['CORS_SUPPORTS_CREDENTIALS'] = True
+
 initialize_cors(app)
 
+@sio.on('join')
+async def join(sid, data):
+    print(data)
+    sio.enter_room(sid, data.get('room'))
+
+@sio.on('send')
+async def test(sid, data):
+    print(data.get('msg'))
+    await sio.emit('reply', data.get('msg'), room=data.get('room'))
 
 class AcquityJwtResponses(Responses):
     @staticmethod
