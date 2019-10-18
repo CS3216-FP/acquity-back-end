@@ -1,10 +1,10 @@
 import datetime
-
+from operator import itemgetter
 import requests
 from passlib.hash import argon2
-
+from sqlalchemy import desc
 from src.config import APP_CONFIG
-from src.database import Security, SellOrder, User, session_scope
+from src.database import Security, SellOrder, User, ChatRoom, Chat, session_scope
 from src.exceptions import InvalidRequestException, UnauthorizedException
 from src.schemata import (
     CREATE_SELL_ORDER_SCHEMA,
@@ -216,3 +216,38 @@ class LinkedinService:
     @validate_input(LINKEDIN_MATCH_EMAILS_SCHEMA)
     def is_match(self, user_email, linkedin_email):
         return True if user_email == linkedin_email else False
+
+
+class ChatService:
+    def __init__(self, Chat=Chat):
+        self.Chat = Chat
+
+    def get_last_message(self, chat_room_id):
+        with session_scope() as session:
+            last_message = session.query(self.Chat).filter_by(
+                chat_room_id=chat_room_id).order_by(desc("created_at")).first().asdict()
+            return {
+                "text": last_message.get("text"),
+                "img": last_message.get("img"),
+                "created_at": last_message.get("created_at"),
+                "chat_type": last_message.get("chat_type"),
+            }
+
+
+class ChatRoomService:
+    def __init__(self, ChatRoom=ChatRoom, ChatService=ChatService):
+        self.ChatRoom = ChatRoom
+        self.ChatService = ChatService
+
+    def get_chat_rooms(self, buyer_id):
+        rooms = []
+        with session_scope() as session:
+            rooms = [
+                {
+                    "room_id": rooms.asdict().get("id"),
+                    "buyer_id": rooms.asdict().get("buyer_id"),
+                    "seller_id": rooms.asdict().get("seller_id"),
+                    **self.ChatService().get_last_message(chat_room_id=rooms.asdict().get("id")),
+                } 
+                for rooms in session.query(self.ChatRoom).filter_by(buyer_id=buyer_id).all()]
+        return sorted(rooms, key=itemgetter('created_at')) 

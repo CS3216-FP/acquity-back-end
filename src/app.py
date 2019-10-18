@@ -10,7 +10,7 @@ from sanic_jwt import Responses
 from src.api import blueprint, user_login
 from src.config import APP_CONFIG
 from src.exceptions import AcquityException
-from src.services import LinkedinService, SecurityService, SellOrderService, UserService
+from src.services import LinkedinService, SecurityService, SellOrderService, UserService, ChatRoomService, ChatService
 import socketio
 import engineio
 
@@ -21,6 +21,8 @@ app.user_service = UserService()
 app.sell_order_service = SellOrderService()
 app.security_service = SecurityService()
 app.linkedin_service = LinkedinService()
+app.chat_room_service = ChatRoomService()
+app.chat_service = ChatService()
 
 
 sio = socketio.AsyncServer(async_mode='sanic', cors_allowed_origins=[])

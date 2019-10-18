@@ -93,3 +93,10 @@ async def create_user_linkedin(request, user):
             **request.json, user_email=user.get("email")
         )
     )
+
+@blueprint.get("/user/chat-rooms")
+@auth_required
+async def user_chat_rooms(request, user):
+    return json(
+        request.app.chat_room_service.get_chat_rooms(buyer_id=user.get("id"))
+    )
