@@ -259,7 +259,8 @@ class ChatService:
                 {
                     **chat.asdict(),
                     "created_at": datetime.timestamp(chat.asdict().get("created_at")),
-                    "updated_at": datetime.timestamp(chat.asdict().get("updated_at"))
+                    "updated_at": datetime.timestamp(chat.asdict().get("updated_at")),
+                    "author_name": self.UserService().get_user(id=chat.asdict().get("author_id")).get("full_name")
                 } for chat in session.query(self.Chat)\
                     .filter_by(chat_room_id=chat_room_id)
                     .order_by(asc("created_at"))
@@ -328,6 +329,7 @@ class ChatSocketService(socketio.AsyncNamespace):
     async def on_set_chat_room(self, sid, data):
         user_id = await self.authenticate(encoded_token=data.get("token"))
         conversation = self.ChatService().get_conversation(user_id=user_id, chat_room_id=data.get("chat_room_id"))
+        print(conversation)
         await self.emit("get_chat_room", conversation)
 
     async def on_send_new_message(self, sid, data):
