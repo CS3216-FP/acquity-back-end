@@ -1,4 +1,5 @@
 import datetime
+from datetime import datetime
 from operator import itemgetter
 import requests
 from passlib.hash import argon2
@@ -273,16 +274,24 @@ class ChatSocketService(socketio.AsyncNamespace):
         self.ChatRoomService = ChatRoomService
         self.sio = sio
 
-    def authenticate(self, encoded_token):
+    async def authenticate(self, encoded_token):
         decoded_token = jwt.decode(encoded_token, APP_CONFIG.get("SANIC_JWT_SECRET"), algorithms=['HS256'])
         user_id = decoded_token.get("id")
         return user_id
 
-    def on_connect(self, sid, environ):
-        user_id = self.authenticate(encoded_token=environ.get("HTTP_TOKEN"))
+    async def join_chat_rooms(self, user_id):
+        rooms = self.ChatRoomService().get_chat_rooms(buyer_id=user_id)
+        for room in rooms:
+            self.sio.enter_room(room.get("author_id"), room.get("room_id"))
+            room["created_at"] = datetime.timestamp(room.get("created_at"))
+            await self.emit("load", room)
 
-    def on_disconnect(self, sid):
-        pass
+    async def on_connect(self, sid, environ):
+        user_id = await self.authenticate(encoded_token=environ.get("HTTP_TOKEN"))
+        await self.join_chat_rooms(user_id=user_id)
+
+    async def on_disconnect(self, sid):
+        await self.emit("load", {"data":"success"})
 
     async def on_send(self, sid, data):
         self.ChatService().add_message(**data)
