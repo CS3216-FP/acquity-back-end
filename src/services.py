@@ -3,7 +3,8 @@ from datetime import datetime
 from operator import itemgetter
 import requests
 from passlib.hash import argon2
-from sqlalchemy import desc
+from sqlalchemy import desc, asc
+from sqlalchemy import or_, and_
 from src.config import APP_CONFIG
 from src.database import Security, SellOrder, User, ChatRoom, Chat, session_scope
 from src.exceptions import InvalidRequestException, UnauthorizedException
@@ -222,48 +223,79 @@ class LinkedinService:
 
 
 class ChatService:
-    def __init__(self, Chat=Chat):
+    def __init__(self, UserService=UserService, Chat=Chat):
         self.Chat = Chat
+        self.UserService = UserService
 
     def get_last_message(self, chat_room_id):
         with session_scope() as session:
-            last_message = session.query(self.Chat).filter_by(
-                chat_room_id=chat_room_id).order_by(desc("created_at")).first().asdict()
-            return {
-                "text": last_message.get("text"),
-                "img": last_message.get("img"),
-                "created_at": last_message.get("created_at"),
-                "author_id": last_message.get("author_id"),
-            }
+            last_message = session.query(self.Chat)\
+                .filter_by(chat_room_id=chat_room_id)\
+                .order_by(desc("created_at"))\
+                .first()\
+                .asdict()
+            return last_message
 
     def add_message(self, chat_room_id, text, img, author_id):
         with session_scope() as session:
-            session.add(
-                Chat(
+            chat = Chat(
                     chat_room_id=str(chat_room_id),
                     text=text,
                     img=img,
                     author_id=str(author_id),
                 )
-            )
+            session.add(chat)
+            session.flush()
+            session.refresh(chat)
+            chat = chat.asdict()
+            chat["created_at"] = datetime.timestamp(chat.get("created_at"))
+            chat["updated_at"] = datetime.timestamp(chat.get("updated_at"))
+            chat["author_name"] = self.UserService().get_user(id=chat.get("author_id")).get("full_name")
+            return chat
+    
+    def get_conversation(self, user_id, chat_room_id):
+        with session_scope() as session:
+            return [
+                {
+                    **chat.asdict(),
+                    "created_at": datetime.timestamp(chat.asdict().get("created_at")),
+                    "updated_at": datetime.timestamp(chat.asdict().get("updated_at"))
+                } for chat in session.query(self.Chat)\
+                    .filter_by(chat_room_id=chat_room_id)
+                    .order_by(asc("created_at"))
+            ]
 
 
 class ChatRoomService:
-    def __init__(self, ChatRoom=ChatRoom, ChatService=ChatService):
+    def __init__(self, UserService=UserService, ChatRoom=ChatRoom, ChatService=ChatService):
+        self.UserService=UserService
         self.ChatRoom = ChatRoom
         self.ChatService = ChatService
 
-    def get_chat_rooms(self, buyer_id):
+    def get_chat_rooms(self, user_id):
         rooms = []
+        data = []
         with session_scope() as session:
-            rooms = [
-                {
-                    "room_id": rooms.asdict().get("id"),
-                    "buyer_id": rooms.asdict().get("buyer_id"),
-                    "seller_id": rooms.asdict().get("seller_id"),
-                    **self.ChatService().get_last_message(chat_room_id=rooms.asdict().get("id")),
-                } 
-                for rooms in session.query(self.ChatRoom).filter_by(buyer_id=buyer_id).all()]
+            data = session.query(self.ChatRoom)\
+            .filter(or_(self.ChatRoom.buyer_id==user_id, self.ChatRoom.seller_id==user_id))\
+            .all()
+            
+            for chat_room in data:
+                chat_room = chat_room.asdict()
+                chat = self.ChatService().get_last_message(chat_room_id=chat_room.get("id"))
+                author_id = chat_room.get("seller_id") if chat_room.get("buyer_id") == user_id \
+                    else chat_room.get("buyer_id") if chat_room.get("seller_id") == user_id \
+                    else None
+                author = self.UserService().get_user(id=author_id)
+                rooms.append({
+                    "author_name": author.get("full_name"),
+                    "author_id": author_id,
+                    "text": chat.get("text"),
+                    "img": chat.get("img"),
+                    "created_at": datetime.timestamp(chat.get("created_at")),
+                    "updated_at": datetime.timestamp(chat.get("updated_at")),
+                    "chat_room_id": chat_room.get("id")
+                })
         return sorted(rooms, key=itemgetter('created_at')) 
 
 
@@ -279,26 +311,33 @@ class ChatSocketService(socketio.AsyncNamespace):
         user_id = decoded_token.get("id")
         return user_id
 
-    async def join_chat_rooms(self, user_id):
-        rooms = self.ChatRoomService().get_chat_rooms(buyer_id=user_id)
+    async def join_chat_rooms(self, sid, user_id):
+        rooms = self.ChatRoomService().get_chat_rooms(user_id=user_id)
         for room in rooms:
-            self.sio.enter_room(room.get("author_id"), room.get("room_id"))
-            room["created_at"] = datetime.timestamp(room.get("created_at"))
-            await self.emit("load", room)
+            self.sio.enter_room(sid, room.get("chat_room_id"))
+        return rooms
 
     async def on_connect(self, sid, environ):
         user_id = await self.authenticate(encoded_token=environ.get("HTTP_TOKEN"))
-        await self.join_chat_rooms(user_id=user_id)
+        rooms = await self.join_chat_rooms(sid=sid, user_id=user_id)
+        await self.emit("get_chat_list", rooms)
 
     async def on_disconnect(self, sid):
         await self.emit("load", {"data":"success"})
 
-    async def on_send(self, sid, data):
-        self.ChatService().add_message(**data)
-        print(data)
-        await self.emit("receive", data)
-        self.sio.enter_room(data.get("author_id"), data.get("chat_room_id"))
-        print(self.sio.rooms(data.get("author_id")))
+    async def on_set_chat_room(self, sid, data):
+        user_id = await self.authenticate(encoded_token=data.get("token"))
+        conversation = self.ChatService().get_conversation(user_id=user_id, chat_room_id=data.get("chat_room_id"))
+        await self.emit("get_chat_room", conversation)
 
-    async def on_update(self, sid, data):
-        print(data)
+    async def on_send_new_message(self, sid, data):
+        user_id = await self.authenticate(encoded_token=data.get("token"))
+        chat = self.ChatService().add_message(
+            chat_room_id=data.get("chat_room_id"), 
+            text=data.get("text"), 
+            img=data.get("img"), 
+            author_id=user_id)
+        await self.emit("get_new_message", chat)
+
+
+
