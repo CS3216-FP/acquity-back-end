@@ -234,6 +234,17 @@ class ChatService:
                 "author_id": last_message.get("author_id"),
             }
 
+    def add_message(self, chat_room_id, text, img, author_id):
+        with session_scope() as session:
+            session.add(
+                Chat(
+                    chat_room_id=str(chat_room_id),
+                    text=text,
+                    img=img,
+                    author_id=str(author_id),
+                )
+            )
+
 
 class ChatRoomService:
     def __init__(self, ChatRoom=ChatRoom, ChatService=ChatService):
@@ -255,14 +266,20 @@ class ChatRoomService:
 
 
 class ChatSocketService(socketio.AsyncNamespace):
+    def __init__(self, namespace, ChatService=ChatService):
+        super().__init__(namespace)
+        self.ChatService = ChatService
+
     def on_connect(self, sid, environ):
         pass
 
     def on_disconnect(self, sid):
         pass
 
-    async def on_my_event(self, sid, data):
-        self.emit('my_response', data)
+    async def on_send(self, sid, data):
+        self.ChatService().add_message(**data)
+        print(data)
+        await self.emit("receive", data)
 
-    async def on_send(self,sid, data):
+    async def on_update(self, sid, data):
         print(data)

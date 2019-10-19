@@ -97,6 +97,9 @@ async def create_user_linkedin(request, user):
 @blueprint.get("/user/chat-rooms")
 @auth_required
 async def user_chat_rooms(request, user):
-    return json(
-        request.app.chat_room_service.get_chat_rooms(buyer_id=user.get("id"))
-    )
+    return json(request.app.chat_room_service.get_chat_rooms(buyer_id=user.get("id")))
+
+@blueprint.get("/user/add-chat")
+@auth_required
+async def user_chat_rooms(request, user):
+    return json(request.app.chat_service.add_message(**request.json))
