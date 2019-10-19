@@ -38,7 +38,7 @@ def seed_db():
             Chat(
                 chat_room_id=str(chat_room_id),
                 text="hello world",
-                chat_type="buyer"
+                author_id=str(brandon_id)
             )
         )
         if session.query(Security).filter_by(name="Grab").count() == 0:

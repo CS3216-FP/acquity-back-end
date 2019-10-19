@@ -21,6 +21,7 @@ from src.schemata import (
     UUID_RULE,
     validate_input,
 )
+import socketio
 
 
 class UserService:
@@ -230,7 +231,7 @@ class ChatService:
                 "text": last_message.get("text"),
                 "img": last_message.get("img"),
                 "created_at": last_message.get("created_at"),
-                "chat_type": last_message.get("chat_type"),
+                "author_id": last_message.get("author_id"),
             }
 
 
@@ -251,3 +252,17 @@ class ChatRoomService:
                 } 
                 for rooms in session.query(self.ChatRoom).filter_by(buyer_id=buyer_id).all()]
         return sorted(rooms, key=itemgetter('created_at')) 
+
+
+class ChatSocketService(socketio.AsyncNamespace):
+    def on_connect(self, sid, environ):
+        pass
+
+    def on_disconnect(self, sid):
+        pass
+
+    async def on_my_event(self, sid, data):
+        self.emit('my_response', data)
+
+    async def on_send(self,sid, data):
+        print(data)

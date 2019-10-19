@@ -1,8 +1,8 @@
 """add chat tables
 
-Revision ID: 51c9243c54f1
+Revision ID: a1317c23fb59
 Revises: 28f0b17593fb
-Create Date: 2019-10-18 23:56:04.602484
+Create Date: 2019-10-19 13:29:42.194939
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision = '51c9243c54f1'
+revision = 'a1317c23fb59'
 down_revision = '28f0b17593fb'
 branch_labels = None
 depends_on = None
@@ -36,7 +36,8 @@ def upgrade():
     sa.Column('chat_room_id', postgresql.UUID(), nullable=False),
     sa.Column('text', sa.Text(), nullable=True),
     sa.Column('img', sa.Binary(), nullable=True),
-    sa.Column('chat_type', sa.String(), nullable=True),
+    sa.Column('author_id', postgresql.UUID(), nullable=False),
+    sa.ForeignKeyConstraint(['author_id'], ['users.id'], ),
     sa.ForeignKeyConstraint(['chat_room_id'], ['chat_room.id'], ),
     sa.PrimaryKeyConstraint('id')
     )

@@ -58,6 +58,7 @@ class User(Base):
     buy_orders = relationship("BuyOrder", back_populates="user")
     seller = relationship("ChatRoom", foreign_keys='ChatRoom.seller_id', back_populates="seller")
     buyer = relationship("ChatRoom", foreign_keys='ChatRoom.buyer_id', back_populates="buyer")
+    author = relationship("Chat", foreign_keys='Chat.author_id', back_populates="author")
 
 class Security(Base):
     __tablename__ = "securities"
@@ -127,9 +128,10 @@ class Chat(Base):
     chat_room_id = Column(UUID, ForeignKey("chat_room.id"), nullable=False)
     text = Column(Text)
     img = Column(Binary)
-    chat_type = Column(String)
+    author_id = Column(UUID, ForeignKey("users.id"), nullable=False)
 
     room = relationship("ChatRoom", back_populates="room")
+    author = relationship("User", foreign_keys=[author_id], back_populates="author")
 
 
 engine = create_engine(APP_CONFIG["DATABASE_URL"])

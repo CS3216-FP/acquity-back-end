@@ -10,12 +10,16 @@ from sanic_jwt import Responses
 from src.api import blueprint, user_login
 from src.config import APP_CONFIG
 from src.exceptions import AcquityException
-from src.services import LinkedinService, SecurityService, SellOrderService, UserService, ChatRoomService, ChatService
+from src.services import (
+    LinkedinService, 
+    SecurityService, 
+    SellOrderService, 
+    UserService, 
+    ChatRoomService, 
+    ChatService,
+    ChatSocketService,
+)
 import socketio
-import engineio
-import jwt
-
-from src.config import APP_CONFIG
 
 app = Sanic(load_env=False)
 app.config.update(APP_CONFIG)
@@ -27,48 +31,12 @@ app.linkedin_service = LinkedinService()
 app.chat_room_service = ChatRoomService()
 app.chat_service = ChatService()
 
-
 sio = socketio.AsyncServer(async_mode='sanic', cors_allowed_origins=[])
 sio.attach(app)
 app.config['CORS_SUPPORTS_CREDENTIALS'] = True
+sio.register_namespace(ChatSocketService('/chat'))
 
 initialize_cors(app)
-"""
-@sio.event
-async def connect(sid, environ):
-    #token="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6IjkzNGM2MWJhLTMwMjktNDY2Mi04NzEzLTZhYmFiNmIzMDgyZiIsImV4cCI6MTU3MTU5Mjk2MX0.IjOzJp-NJt6ssGadwI5qce0xCcSwyTZrpol7Agl9P9k"
-    #print(jwt.decode(token, APP_CONFIG.get("SANIC_JWT_SECRET"), algorithms=['HS256']))
-    #print('connect ', sid)
-    #print(environ)
-    print(environ.get("HTTP_TOKEN"))
-    print(jwt.decode(environ.get("HTTP_TOKEN"),APP_CONFIG.get("SANIC_JWT_SECRET"), algorithms=['HS256']))
-
-
-@sio.on('join')
-async def join(sid, data):
-    print(data)
-    sio.enter_room(sid, data.get('room'))
-
-@sio.on('send', namespace="/chat")
-async def test(sid, data):
-    print(data.get('msg'))
-    await sio.emit('reply', data.get('msg'), room=data.get('room'))
-"""
-class MyCustomNamespace(socketio.AsyncNamespace):
-    def on_connect(self, sid, environ):
-        pass
-
-    def on_disconnect(self, sid):
-        pass
-
-    async def on_my_event(self, sid, data):
-        self.emit('my_response', data)
-
-    async def on_send(self,sid, data):
-        print(data)
-
-sio.register_namespace(MyCustomNamespace('/chat'))
-
 
 class AcquityJwtResponses(Responses):
     @staticmethod
