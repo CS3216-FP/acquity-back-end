@@ -22,6 +22,7 @@ from src.schemata import (
     validate_input,
 )
 import socketio
+import jwt
 
 
 class UserService:
@@ -266,12 +267,19 @@ class ChatRoomService:
 
 
 class ChatSocketService(socketio.AsyncNamespace):
-    def __init__(self, namespace, ChatService=ChatService):
+    def __init__(self, namespace, sio, ChatService=ChatService, ChatRoomService=ChatRoomService):
         super().__init__(namespace)
         self.ChatService = ChatService
+        self.ChatRoomService = ChatRoomService
+        self.sio = sio
+
+    def authenticate(self, encoded_token):
+        decoded_token = jwt.decode(encoded_token, APP_CONFIG.get("SANIC_JWT_SECRET"), algorithms=['HS256'])
+        user_id = decoded_token.get("id")
+        return user_id
 
     def on_connect(self, sid, environ):
-        pass
+        user_id = self.authenticate(encoded_token=environ.get("HTTP_TOKEN"))
 
     def on_disconnect(self, sid):
         pass
@@ -280,6 +288,8 @@ class ChatSocketService(socketio.AsyncNamespace):
         self.ChatService().add_message(**data)
         print(data)
         await self.emit("receive", data)
+        self.sio.enter_room(data.get("author_id"), data.get("chat_room_id"))
+        print(self.sio.rooms(data.get("author_id")))
 
     async def on_update(self, sid, data):
         print(data)
