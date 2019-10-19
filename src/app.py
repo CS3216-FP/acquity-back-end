@@ -13,6 +13,9 @@ from src.exceptions import AcquityException
 from src.services import LinkedinService, SecurityService, SellOrderService, UserService, ChatRoomService, ChatService
 import socketio
 import engineio
+import jwt
+
+from src.config import APP_CONFIG
 
 app = Sanic(load_env=False)
 app.config.update(APP_CONFIG)
@@ -30,6 +33,16 @@ sio.attach(app)
 app.config['CORS_SUPPORTS_CREDENTIALS'] = True
 
 initialize_cors(app)
+
+@sio.event
+async def connect(sid, environ):
+    #token="eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpZCI6IjkzNGM2MWJhLTMwMjktNDY2Mi04NzEzLTZhYmFiNmIzMDgyZiIsImV4cCI6MTU3MTU5Mjk2MX0.IjOzJp-NJt6ssGadwI5qce0xCcSwyTZrpol7Agl9P9k"
+    #print(jwt.decode(token, APP_CONFIG.get("SANIC_JWT_SECRET"), algorithms=['HS256']))
+    #print('connect ', sid)
+    #print(environ)
+    print(environ.get("HTTP_TOKEN"))
+    print(jwt.decode(environ.get("HTTP_TOKEN"),APP_CONFIG.get("SANIC_JWT_SECRET"), algorithms=['HS256']))
+
 
 @sio.on('join')
 async def join(sid, data):
