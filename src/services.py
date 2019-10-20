@@ -311,8 +311,8 @@ class ChatRoomService:
                     "dealer_id": dealer_id,
                     "text": chat.get("text", "Start Conversation!"),
                     "img": chat.get("img", None),
-                    "created_at": datetime.timestamp(chat_room.get("created_at")),
-                    "updated_at": datetime.timestamp(chat_room.get("updated_at")),
+                    "created_at": datetime.timestamp(chat.get("created_at", datetime.now())),
+                    "updated_at": datetime.timestamp(chat.get("updated_at", datetime.now())),
                     "chat_room_id": chat_room.get("id")
                 })
         return sorted(rooms, key=itemgetter('created_at')) 
@@ -350,7 +350,7 @@ class ChatSocketService(socketio.AsyncNamespace):
     async def on_set_chat_room(self, sid, data):
         user_id = await self.authenticate(encoded_token=data.get("token"))
         conversation = self.ChatService().get_conversation(user_id=user_id, chat_room_id=data.get("chat_room_id"))
-        await self.emit("get_chat_room", conversation, room=data.get("chat_room_id"))
+        await self.emit("get_chat_room", conversation, room=user_id)
 
     async def on_send_new_message(self, sid, data):
         user_id = await self.authenticate(encoded_token=data.get("token"))
