@@ -319,11 +319,10 @@ class ChatRoomService:
 
 
 class ChatSocketService(socketio.AsyncNamespace):
-    def __init__(self, namespace, sio, ChatService=ChatService, ChatRoomService=ChatRoomService):
+    def __init__(self, namespace, ChatService=ChatService, ChatRoomService=ChatRoomService):
         super().__init__(namespace)
         self.ChatService = ChatService
         self.ChatRoomService = ChatRoomService
-        self.sio = sio
 
     async def authenticate(self, encoded_token):
         decoded_token = jwt.decode(encoded_token, APP_CONFIG.get("SANIC_JWT_SECRET"), algorithms=['HS256'])
@@ -333,21 +332,25 @@ class ChatSocketService(socketio.AsyncNamespace):
     async def join_chat_rooms(self, sid, user_id):
         rooms = self.ChatRoomService().get_chat_rooms(user_id=user_id)
         for room in rooms:
-            self.sio.enter_room(sid, room.get("chat_room_id"))
+            self.enter_room(sid, room.get("chat_room_id"))
+        self.enter_room(sid, user_id)
         return rooms
 
     async def on_connect(self, sid, environ):
-        user_id = await self.authenticate(encoded_token=environ.get("HTTP_TOKEN"))
-        rooms = await self.join_chat_rooms(sid=sid, user_id=user_id)
-        await self.emit("get_chat_list", rooms)
+        return {"data":"success"}
 
     async def on_disconnect(self, sid):
-        await self.emit("load", {"data":"success"})
+        return {"data":"success"}
+
+    async def on_set_chat_list(self, sid, data):
+        user_id = await self.authenticate(encoded_token=data.get("token"))
+        rooms = await self.join_chat_rooms(sid=sid, user_id=user_id)
+        await self.emit("get_chat_list", rooms, room=user_id)
 
     async def on_set_chat_room(self, sid, data):
         user_id = await self.authenticate(encoded_token=data.get("token"))
         conversation = self.ChatService().get_conversation(user_id=user_id, chat_room_id=data.get("chat_room_id"))
-        await self.emit("get_chat_room", conversation)
+        await self.emit("get_chat_room", conversation, room=data.get("chat_room_id"))
 
     async def on_send_new_message(self, sid, data):
         user_id = await self.authenticate(encoded_token=data.get("token"))
@@ -356,7 +359,8 @@ class ChatSocketService(socketio.AsyncNamespace):
             text=data.get("text"), 
             img=data.get("img"), 
             author_id=user_id)
-        await self.emit("get_new_message", chat)
+
+        await self.emit("get_new_message", chat, room=chat.get("chat_room_id"))
 
 
 
