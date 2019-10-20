@@ -128,15 +128,18 @@ GET_TO_THE_NEAREST_NUMBER_OF_SHARES_ON_SAME_PRICE_CASE = (
     [
         {"id": "b1", "number_of_shares": 15, "price": 5},
         {"id": "b2", "number_of_shares": 24, "price": 5},
-        {"id": "b3", "number_of_shares": 16, "price": 6},
-        {"id": "b4", "number_of_shares": 25, "price": 6},
-        {"id": "b5", "number_of_shares": 18, "price": 7},
-        {"id": "b6", "number_of_shares": 22, "price": 7},
+        {"id": "b3", "number_of_shares": 25, "price": 6},
+        {"id": "b4", "number_of_shares": 26, "price": 6},
+        {"id": "b5", "number_of_shares": 15, "price": 7},
+        {"id": "b6", "number_of_shares": 18, "price": 7},
+        {"id": "b7", "number_of_shares": 18, "price": 8},
+        {"id": "b8", "number_of_shares": 29, "price": 8},
     ],
     [
         {"id": "s1", "number_of_shares": 20, "price": 5},
         {"id": "s2", "number_of_shares": 20, "price": 6},
         {"id": "s3", "number_of_shares": 20, "price": 7},
+        {"id": "s4", "number_of_shares": 20, "price": 8},
     ],
     [],
     set([
@@ -144,10 +147,12 @@ GET_TO_THE_NEAREST_NUMBER_OF_SHARES_ON_SAME_PRICE_CASE = (
         ("b2", "s1"),
         ("b3", "s2"),
         ("b6", "s3"),
+        ("b7", "s4"),
         # Subsequent matches, most desperate to most desperate
-        ("b5", "s1"),
-        ("b4", "s2"),
-        ("b1", "s3"),
+        ("b8", "s1"),
+        ("b5", "s2"),
+        ("b4", "s3"),
+        ("b1", "s4"),
     ]),
 )
 
@@ -210,6 +215,44 @@ POPULATED_MARKET_CASE = (
         # less than their price
     ]),
 )
+
+NEAREST_PRICE_BRACKET_CASE = (
+    [
+        {"id": "b1", "number_of_shares": 20, "price": 4},
+        {"id": "b2", "number_of_shares": 15, "price": 6},
+        {"id": "b3", "number_of_shares": 20, "price": 6},
+        {"id": "b4", "number_of_shares": 20, "price": 8},
+    ],
+    [
+        {"id": "s1", "number_of_shares": 20, "price": 5},
+        {"id": "s2", "number_of_shares": 20, "price": 6},
+        {"id": "s3", "number_of_shares": 20, "price": 7},
+    ],
+    [],
+    set([
+        # First matching. Make sure seller price < buyer price
+        ("b2", "s1"),
+        ("b3", "s2"),
+        ("b4", "s3"),
+        # No subsequent matches since b1's price is too low
+    ]),
+)
+
+PRICE_MISMATCH_CASE = (
+    [
+        {"id": "b1", "number_of_shares": 20, "price": 4},
+        {"id": "b2", "number_of_shares": 20, "price": 5},
+        {"id": "b3", "number_of_shares": 20, "price": 6},
+    ],
+    [
+        {"id": "s1", "number_of_shares": 20, "price": 7},
+        {"id": "s2", "number_of_shares": 20, "price": 8},
+        {"id": "s3", "number_of_shares": 20, "price": 9},
+    ],
+    [],
+    set([
+    ]),
+)
 # fmt: on
 
 TEST_CASES = [
@@ -223,6 +266,8 @@ TEST_CASES = [
     NO_SELLERS_CASE,
     NO_BUYERS_CASE,
     POPULATED_MARKET_CASE,
+    NEAREST_PRICE_BRACKET_CASE,
+    PRICE_MISMATCH_CASE,
 ]
 
 
