@@ -25,11 +25,28 @@ def seed_db():
                     can_sell=False,
                 )
             )
+        if session.query(User).filter_by(email="c@c.com").count() == 0:
+            session.add(
+                User(
+                    email="c@c.com",
+                    hashed_password=argon2.hash("acquity"),
+                    full_name="Elizabeth Teo",
+                    can_buy=True,
+                    can_sell=False,
+                )
+            )
         brandon_id = getattr(session.query(User).filter_by(email="b@b.com").first(), "id")
         ben_id = getattr(session.query(User).filter_by(email="a@a.com").first(), "id")
+        elizabeth_id = getattr(session.query(User).filter_by(email="c@c.com").first(), "id")
         session.add(
             ChatRoom(
                 seller_id=str(ben_id),
+                buyer_id=str(brandon_id),
+            )
+        )
+        session.add(
+            ChatRoom(
+                seller_id=str(elizabeth_id),
                 buyer_id=str(brandon_id),
             )
         )

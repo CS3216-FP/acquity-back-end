@@ -223,18 +223,20 @@ class LinkedinService:
 
 
 class ChatService:
-    def __init__(self, UserService=UserService, Chat=Chat):
+    def __init__(self, UserService=UserService, Chat=Chat, ChatRoom=ChatRoom):
         self.Chat = Chat
         self.UserService = UserService
+        self.ChatRoom = ChatRoom
 
     def get_last_message(self, chat_room_id):
         with session_scope() as session:
             last_message = session.query(self.Chat)\
                 .filter_by(chat_room_id=chat_room_id)\
                 .order_by(desc("created_at"))\
-                .first()\
-                .asdict()
-            return last_message
+                .first()
+            if last_message == None:
+                return {}
+            return last_message.asdict()
 
     def add_message(self, chat_room_id, text, img, author_id):
         with session_scope() as session:
@@ -248,6 +250,16 @@ class ChatService:
             session.flush()
             session.refresh(chat)
             chat = chat.asdict()
+
+            chat_room = session.query(self.ChatRoom).filter_by(id=chat_room_id).one().asdict()
+
+            dealer_id = chat_room.get("seller_id") \
+                if chat_room.get("buyer_id") == author_id \
+                else chat_room.get("buyer_id")
+            dealer = self.UserService().get_user(id=dealer_id)
+
+            chat["dealer_name"] = dealer.get("full_name")
+            chat["dealer_id"] = dealer.get("full_name")
             chat["created_at"] = datetime.timestamp(chat.get("created_at"))
             chat["updated_at"] = datetime.timestamp(chat.get("updated_at"))
             chat["author_name"] = self.UserService().get_user(id=chat.get("author_id")).get("full_name")
@@ -284,17 +296,23 @@ class ChatRoomService:
             for chat_room in data:
                 chat_room = chat_room.asdict()
                 chat = self.ChatService().get_last_message(chat_room_id=chat_room.get("id"))
-                author_id = chat_room.get("seller_id") if chat_room.get("buyer_id") == user_id \
-                    else chat_room.get("buyer_id") if chat_room.get("seller_id") == user_id \
-                    else None
-                author = self.UserService().get_user(id=author_id)
+
+                author_id = chat.get("author_id", None)
+                author = {} if author_id == None else self.UserService().get_user(id=author_id)
+
+                dealer_id = chat_room.get("seller_id") \
+                    if chat_room.get("buyer_id") == user_id \
+                    else chat_room.get("buyer_id")
+                dealer = self.UserService().get_user(id=dealer_id)
                 rooms.append({
                     "author_name": author.get("full_name"),
                     "author_id": author_id,
-                    "text": chat.get("text"),
-                    "img": chat.get("img"),
-                    "created_at": datetime.timestamp(chat.get("created_at")),
-                    "updated_at": datetime.timestamp(chat.get("updated_at")),
+                    "dealer_name": dealer.get("full_name"),
+                    "dealer_id": dealer_id,
+                    "text": chat.get("text", "Start Conversation!"),
+                    "img": chat.get("img", None),
+                    "created_at": datetime.timestamp(chat_room.get("created_at")),
+                    "updated_at": datetime.timestamp(chat_room.get("updated_at")),
                     "chat_room_id": chat_room.get("id")
                 })
         return sorted(rooms, key=itemgetter('created_at')) 
@@ -329,7 +347,6 @@ class ChatSocketService(socketio.AsyncNamespace):
     async def on_set_chat_room(self, sid, data):
         user_id = await self.authenticate(encoded_token=data.get("token"))
         conversation = self.ChatService().get_conversation(user_id=user_id, chat_room_id=data.get("chat_room_id"))
-        print(conversation)
         await self.emit("get_chat_room", conversation)
 
     async def on_send_new_message(self, sid, data):
