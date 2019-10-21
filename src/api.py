@@ -54,16 +54,6 @@ async def invite_buyer(request, user):
     )
 
 
-@blueprint.post("/user/linkedin/")
-@auth_required
-async def create_user_linkedin(request, user):
-    return json(
-        request.app.linkedin_service.activate_buyer_privileges(
-            **request.json, user_email=user.get("email")
-        )
-    )
-
-
 @blueprint.get("/sell_order/")
 @auth_required
 async def get_sell_orders_by_user(request, user):
