@@ -1,10 +1,11 @@
 from datetime import datetime
 
+from operator import itemgetter
 import requests
 from passlib.hash import argon2
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
-
+from src.config import APP_CONFIG
 from src.database import (
     BannedPair,
     BuyOrder,
@@ -17,6 +18,8 @@ from src.database import (
     ChatRoom,
     session_scope,
 )
+from sqlalchemy import desc, asc
+from sqlalchemy import or_, and_
 from src.exceptions import (
     InvalidRequestException,
     NoActiveRoundException,
@@ -38,6 +41,7 @@ from src.schemata import (
     UUID_RULE,
     validate_input,
 )
+import jwt
 import socketio
 
 
@@ -443,11 +447,12 @@ class BannedPairService(DefaultService):
                 ]
             )
 
-class ChatService:
-    def __init__(self, UserService=UserService, Chat=Chat, ChatRoom=ChatRoom):
+class ChatService(DefaultService):
+    def __init__(self, config, UserService=UserService, Chat=Chat, ChatRoom=ChatRoom):
         self.Chat = Chat
         self.UserService = UserService
         self.ChatRoom = ChatRoom
+        self.config = config
 
     def get_last_message(self, chat_room_id):
         with session_scope() as session:
@@ -483,7 +488,7 @@ class ChatService:
             chat["dealer_id"] = dealer.get("full_name")
             chat["created_at"] = datetime.timestamp(chat.get("created_at"))
             chat["updated_at"] = datetime.timestamp(chat.get("updated_at"))
-            chat["author_name"] = self.UserService().get_user(id=chat.get("author_id")).get("full_name")
+            chat["author_name"] = self.UserService(self.config).get_user(id=chat.get("author_id")).get("full_name")
             return chat
     
     def get_conversation(self, user_id, chat_room_id):
@@ -493,18 +498,19 @@ class ChatService:
                     **chat.asdict(),
                     "created_at": datetime.timestamp(chat.asdict().get("created_at")),
                     "updated_at": datetime.timestamp(chat.asdict().get("updated_at")),
-                    "author_name": self.UserService().get_user(id=chat.asdict().get("author_id")).get("full_name")
+                    "author_name": self.UserService(self.config).get_user(id=chat.asdict().get("author_id")).get("full_name")
                 } for chat in session.query(self.Chat)\
                     .filter_by(chat_room_id=chat_room_id)
                     .order_by(asc("created_at"))
             ]
 
 
-class ChatRoomService:
-    def __init__(self, UserService=UserService, ChatRoom=ChatRoom, ChatService=ChatService):
+class ChatRoomService(DefaultService):
+    def __init__(self, config, UserService=UserService, ChatRoom=ChatRoom, ChatService=ChatService):
         self.UserService=UserService
         self.ChatRoom = ChatRoom
         self.ChatService = ChatService
+        self.config = config
 
     def get_chat_rooms(self, user_id):
         rooms = []
@@ -516,15 +522,15 @@ class ChatRoomService:
             
             for chat_room in data:
                 chat_room = chat_room.asdict()
-                chat = self.ChatService().get_last_message(chat_room_id=chat_room.get("id"))
+                chat = self.ChatService(self.config).get_last_message(chat_room_id=chat_room.get("id"))
 
                 author_id = chat.get("author_id", None)
-                author = {} if author_id == None else self.UserService().get_user(id=author_id)
+                author = {} if author_id == None else self.UserService(self.config).get_user(id=author_id)
 
                 dealer_id = chat_room.get("seller_id") \
                     if chat_room.get("buyer_id") == user_id \
                     else chat_room.get("buyer_id")
-                dealer = self.UserService().get_user(id=dealer_id)
+                dealer = self.UserService(self.config).get_user(id=dealer_id)
                 rooms.append({
                     "author_name": author.get("full_name"),
                     "author_id": author_id,
@@ -539,10 +545,11 @@ class ChatRoomService:
 
 
 class ChatSocketService(socketio.AsyncNamespace):
-    def __init__(self, namespace, ChatService=ChatService, ChatRoomService=ChatRoomService):
+    def __init__(self, namespace, config, ChatService=ChatService, ChatRoomService=ChatRoomService):
         super().__init__(namespace)
         self.ChatService = ChatService
         self.ChatRoomService = ChatRoomService
+        self.config = config
 
     async def authenticate(self, encoded_token):
         decoded_token = jwt.decode(encoded_token, APP_CONFIG.get("SANIC_JWT_SECRET"), algorithms=['HS256'])
@@ -550,7 +557,7 @@ class ChatSocketService(socketio.AsyncNamespace):
         return user_id
 
     async def join_chat_rooms(self, sid, user_id):
-        rooms = self.ChatRoomService().get_chat_rooms(user_id=user_id)
+        rooms = self.ChatRoomService(self.config).get_chat_rooms(user_id=user_id)
         for room in rooms:
             self.enter_room(sid, room.get("chat_room_id"))
         self.enter_room(sid, user_id)
@@ -566,17 +573,18 @@ class ChatSocketService(socketio.AsyncNamespace):
     async def on_set_chat_list(self, sid, data):
         print(data)
         user_id = await self.authenticate(encoded_token=data.get("token"))
+        print(data)
         rooms = await self.join_chat_rooms(sid=sid, user_id=user_id)
         await self.emit("get_chat_list", rooms, room=user_id)
 
     async def on_set_chat_room(self, sid, data):
         user_id = await self.authenticate(encoded_token=data.get("token"))
-        conversation = self.ChatService().get_conversation(user_id=user_id, chat_room_id=data.get("chat_room_id"))
+        conversation = self.ChatService(self.config).get_conversation(user_id=user_id, chat_room_id=data.get("chat_room_id"))
         await self.emit("get_chat_room", conversation, room=user_id)
 
     async def on_send_new_message(self, sid, data):
         user_id = await self.authenticate(encoded_token=data.get("token"))
-        chat = self.ChatService().add_message(
+        chat = self.ChatService(self.config).add_message(
             chat_room_id=data.get("chat_room_id"), 
             message=data.get("message"), 
             img=data.get("img"), 

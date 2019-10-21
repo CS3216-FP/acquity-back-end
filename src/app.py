@@ -36,13 +36,13 @@ app.security_service = SecurityService(app.config)
 app.round_service = RoundService(app.config)
 app.match_service = MatchService(app.config)
 app.banned_pair_service = BannedPairService(app.config)
-app.chat_room_service = ChatRoomService()
-app.chat_service = ChatService()
+app.chat_room_service = ChatRoomService(app.config)
+app.chat_service = ChatService(app.config)
 
 sio = socketio.AsyncServer(async_mode='sanic', cors_allowed_origins=[])
 sio.attach(app)
 app.config['CORS_SUPPORTS_CREDENTIALS'] = True
-sio.register_namespace(ChatSocketService('/v1/chat'))
+sio.register_namespace(ChatSocketService('/v1/chat', app.config))
 initialize_cors(app)
 
 
