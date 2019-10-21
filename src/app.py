@@ -21,9 +21,11 @@ from src.services import (
     UserService,
     ChatRoomService,
     ChatService,
-    ChatSocketService,
 )
 import socketio
+from socket_service import (
+    ChatSocketService,
+)
 
 app = Sanic(load_env=False)
 app.config.update(APP_CONFIG)
