@@ -13,6 +13,8 @@ from src.database import (
     Security,
     SellOrder,
     User,
+    Chat,
+    ChatRoom,
     session_scope,
 )
 from src.exceptions import (
@@ -36,6 +38,7 @@ from src.schemata import (
     UUID_RULE,
     validate_input,
 )
+import socketio
 
 
 class DefaultService:
@@ -439,3 +442,144 @@ class BannedPairService(DefaultService):
                     self.BannedPair(buyer_id=other_user_id, seller_id=my_user_id),
                 ]
             )
+
+class ChatService:
+    def __init__(self, UserService=UserService, Chat=Chat, ChatRoom=ChatRoom):
+        self.Chat = Chat
+        self.UserService = UserService
+        self.ChatRoom = ChatRoom
+
+    def get_last_message(self, chat_room_id):
+        with session_scope() as session:
+            last_message = session.query(self.Chat)\
+                .filter_by(chat_room_id=chat_room_id)\
+                .order_by(desc("created_at"))\
+                .first()
+            if last_message == None:
+                return {}
+            return last_message.asdict()
+
+    def add_message(self, chat_room_id, message, img, author_id):
+        with session_scope() as session:
+            chat = Chat(
+                    chat_room_id=str(chat_room_id),
+                    message=message,
+                    img=img,
+                    author_id=str(author_id),
+                )
+            session.add(chat)
+            session.flush()
+            session.refresh(chat)
+            chat = chat.asdict()
+
+            chat_room = session.query(self.ChatRoom).filter_by(id=chat_room_id).one().asdict()
+
+            dealer_id = chat_room.get("seller_id") \
+                if chat_room.get("buyer_id") == author_id \
+                else chat_room.get("buyer_id")
+            dealer = self.UserService().get_user(id=dealer_id)
+
+            chat["dealer_name"] = dealer.get("full_name")
+            chat["dealer_id"] = dealer.get("full_name")
+            chat["created_at"] = datetime.timestamp(chat.get("created_at"))
+            chat["updated_at"] = datetime.timestamp(chat.get("updated_at"))
+            chat["author_name"] = self.UserService().get_user(id=chat.get("author_id")).get("full_name")
+            return chat
+    
+    def get_conversation(self, user_id, chat_room_id):
+        with session_scope() as session:
+            return [
+                {
+                    **chat.asdict(),
+                    "created_at": datetime.timestamp(chat.asdict().get("created_at")),
+                    "updated_at": datetime.timestamp(chat.asdict().get("updated_at")),
+                    "author_name": self.UserService().get_user(id=chat.asdict().get("author_id")).get("full_name")
+                } for chat in session.query(self.Chat)\
+                    .filter_by(chat_room_id=chat_room_id)
+                    .order_by(asc("created_at"))
+            ]
+
+
+class ChatRoomService:
+    def __init__(self, UserService=UserService, ChatRoom=ChatRoom, ChatService=ChatService):
+        self.UserService=UserService
+        self.ChatRoom = ChatRoom
+        self.ChatService = ChatService
+
+    def get_chat_rooms(self, user_id):
+        rooms = []
+        data = []
+        with session_scope() as session:
+            data = session.query(self.ChatRoom)\
+            .filter(or_(self.ChatRoom.buyer_id==user_id, self.ChatRoom.seller_id==user_id))\
+            .all()
+            
+            for chat_room in data:
+                chat_room = chat_room.asdict()
+                chat = self.ChatService().get_last_message(chat_room_id=chat_room.get("id"))
+
+                author_id = chat.get("author_id", None)
+                author = {} if author_id == None else self.UserService().get_user(id=author_id)
+
+                dealer_id = chat_room.get("seller_id") \
+                    if chat_room.get("buyer_id") == user_id \
+                    else chat_room.get("buyer_id")
+                dealer = self.UserService().get_user(id=dealer_id)
+                rooms.append({
+                    "author_name": author.get("full_name"),
+                    "author_id": author_id,
+                    "dealer_name": dealer.get("full_name"),
+                    "dealer_id": dealer_id,
+                    "message": chat.get("message", "Start Conversation!"),
+                    "created_at": datetime.timestamp(chat.get("created_at", datetime.now())),
+                    "updated_at": datetime.timestamp(chat.get("updated_at", datetime.now())),
+                    "chat_room_id": chat_room.get("id")
+                })
+        return sorted(rooms, key=itemgetter('created_at')) 
+
+
+class ChatSocketService(socketio.AsyncNamespace):
+    def __init__(self, namespace, ChatService=ChatService, ChatRoomService=ChatRoomService):
+        super().__init__(namespace)
+        self.ChatService = ChatService
+        self.ChatRoomService = ChatRoomService
+
+    async def authenticate(self, encoded_token):
+        decoded_token = jwt.decode(encoded_token, APP_CONFIG.get("SANIC_JWT_SECRET"), algorithms=['HS256'])
+        user_id = decoded_token.get("id")
+        return user_id
+
+    async def join_chat_rooms(self, sid, user_id):
+        rooms = self.ChatRoomService().get_chat_rooms(user_id=user_id)
+        for room in rooms:
+            self.enter_room(sid, room.get("chat_room_id"))
+        self.enter_room(sid, user_id)
+        return rooms
+
+    async def on_connect(self, sid, environ):
+        print("connected")
+        return {"data":"success"}
+
+    async def on_disconnect(self, sid):
+        return {"data":"success"}
+
+    async def on_set_chat_list(self, sid, data):
+        print(data)
+        user_id = await self.authenticate(encoded_token=data.get("token"))
+        rooms = await self.join_chat_rooms(sid=sid, user_id=user_id)
+        await self.emit("get_chat_list", rooms, room=user_id)
+
+    async def on_set_chat_room(self, sid, data):
+        user_id = await self.authenticate(encoded_token=data.get("token"))
+        conversation = self.ChatService().get_conversation(user_id=user_id, chat_room_id=data.get("chat_room_id"))
+        await self.emit("get_chat_room", conversation, room=user_id)
+
+    async def on_send_new_message(self, sid, data):
+        user_id = await self.authenticate(encoded_token=data.get("token"))
+        chat = self.ChatService().add_message(
+            chat_room_id=data.get("chat_room_id"), 
+            message=data.get("message"), 
+            img=data.get("img"), 
+            author_id=user_id)
+
+        await self.emit("get_new_message", chat, room=chat.get("chat_room_id"))

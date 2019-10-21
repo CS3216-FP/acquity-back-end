@@ -19,7 +19,11 @@ from src.services import (
     SecurityService,
     SellOrderService,
     UserService,
+    ChatRoomService,
+    ChatService,
+    ChatSocketService,
 )
+import socketio
 
 app = Sanic(load_env=False)
 app.config.update(APP_CONFIG)
@@ -32,7 +36,13 @@ app.security_service = SecurityService(app.config)
 app.round_service = RoundService(app.config)
 app.match_service = MatchService(app.config)
 app.banned_pair_service = BannedPairService(app.config)
+app.chat_room_service = ChatRoomService()
+app.chat_service = ChatService()
 
+sio = socketio.AsyncServer(async_mode='sanic', cors_allowed_origins=[])
+sio.attach(app)
+app.config['CORS_SUPPORTS_CREDENTIALS'] = True
+sio.register_namespace(ChatSocketService('/v1/chat'))
 initialize_cors(app)
 
 
