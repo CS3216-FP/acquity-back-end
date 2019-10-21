@@ -14,6 +14,7 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relationship, sessionmaker
+from sqlalchemy.schema import UniqueConstraint
 
 from src.config import APP_CONFIG
 
@@ -143,6 +144,8 @@ class BannedPair(Base):
 
     buyer = relationship("User", back_populates="bans_as_buyer")
     seller = relationship("User", back_populates="bans_as_seller")
+
+    __table_args__ = (UniqueConstraint("buyer_id", "seller_id"),)
 
 
 engine = create_engine(APP_CONFIG["DATABASE_URL"])

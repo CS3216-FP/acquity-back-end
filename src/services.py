@@ -6,6 +6,7 @@ from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
 
 from src.database import (
+    BannedPair,
     BuyOrder,
     Match,
     Round,
@@ -409,3 +410,21 @@ class MatchService(DefaultService):
                 session.add(match)
 
             session.query(Round).get(round_id).is_concluded = True
+
+
+class BannedPairService(DefaultService):
+    def __init__(self, config, User=User, BannedPair=BannedPair):
+        super().__init__(config)
+        self.User = User
+        self.BannedPair = BannedPair
+
+    @validate_input({"my_user_id": UUID_RULE, "other_user_id": UUID_RULE})
+    def ban_user(self, my_user_id, other_user_id):
+        # Currently this bans the user two-way: both as buyer and as seller
+        with session_scope() as session:
+            session.add_all(
+                [
+                    BannedPair(buyer_id=my_user_id, seller_id=other_user_id),
+                    BannedPair(buyer_id=other_user_id, seller_id=my_user_id),
+                ]
+            )
