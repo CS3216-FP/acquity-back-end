@@ -126,7 +126,6 @@ def test_create_order__unauthorized():
 def test_create_order__limit_reached():
     user_id = create_user()["id"]
     security_id = create_security()["id"]
-    round = create_round()
 
     sell_order_params = {
         "user_id": user_id,
