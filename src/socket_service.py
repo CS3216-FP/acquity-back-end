@@ -26,16 +26,13 @@ class ChatSocketService(socketio.AsyncNamespace):
         return rooms
 
     async def on_connect(self, sid, environ):
-        print("connected")
         return {"data":"success"}
 
     async def on_disconnect(self, sid):
         return {"data":"success"}
 
     async def on_set_chat_list(self, sid, data):
-        print(data)
         user_id = await self.authenticate(encoded_token=data.get("token"))
-        print(data)
         rooms = await self.join_chat_rooms(sid=sid, user_id=user_id)
         await self.emit("get_chat_list", rooms, room=user_id)
 
