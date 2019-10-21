@@ -15,6 +15,7 @@ elif ACQUITY_ENV == "TEST":
 APP_CONFIG = {
     "DATABASE_URL": getenv("DATABASE_URL", DEFAULT_DATABASE_URL),
     "CORS_AUTOMATIC_OPTIONS": True,
+    "HOST": getenv("HOST"),
     "PORT": getenv("PORT", 8000),
     "TEMPORIZE_URL": getenv("TEMPORIZE_URL"),
     "TEMPORIZE_TOKEN": getenv("TEMPORIZE_TOKEN"),
