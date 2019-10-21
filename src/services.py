@@ -379,11 +379,19 @@ class RoundService(DefaultService):
 
 
 class MatchService(DefaultService):
-    def __init__(self, config, BuyOrder=BuyOrder, SellOrder=SellOrder, Match=Match):
+    def __init__(
+        self,
+        config,
+        BuyOrder=BuyOrder,
+        SellOrder=SellOrder,
+        Match=Match,
+        BannedPair=BannedPair,
+    ):
         super().__init__(config)
         self.BuyOrder = BuyOrder
         self.SellOrder = SellOrder
         self.Match = Match
+        self.BannedPair = BannedPair
 
     def run_matches(self):
         round_id = RoundService(self.config).get_active()["id"]
@@ -399,8 +407,12 @@ class MatchService(DefaultService):
                 .filter_by(round_id=round_id)
                 .all()
             ]
+            banned_pairs = [
+                (bp.buyer_id, bp.seller_id)
+                for bp in session.query(self.BannedPair).all()
+            ]
 
-        match_results = match_buyers_and_sellers(buy_orders, sell_orders, [])
+        match_results = match_buyers_and_sellers(buy_orders, sell_orders, banned_pairs)
 
         with session_scope() as session:
             for buy_order_id, sell_order_id in match_results:
