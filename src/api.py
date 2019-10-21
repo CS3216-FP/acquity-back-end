@@ -46,7 +46,7 @@ async def invite_seller(request, user):
 @blueprint.post("/user/invite/buyer")
 @auth_required
 @expects_json_object
-async def invite_seller(request, user):
+async def invite_buyer(request, user):
     return json(
         request.app.user_service.invite_to_be_buyer(
             **request.json, inviter_id=user["id"]
