@@ -413,9 +413,8 @@ class MatchService(DefaultService):
 
 
 class BannedPairService(DefaultService):
-    def __init__(self, config, User=User, BannedPair=BannedPair):
+    def __init__(self, config, BannedPair=BannedPair):
         super().__init__(config)
-        self.User = User
         self.BannedPair = BannedPair
 
     @validate_input({"my_user_id": UUID_RULE, "other_user_id": UUID_RULE})
@@ -424,7 +423,7 @@ class BannedPairService(DefaultService):
         with session_scope() as session:
             session.add_all(
                 [
-                    BannedPair(buyer_id=my_user_id, seller_id=other_user_id),
-                    BannedPair(buyer_id=other_user_id, seller_id=my_user_id),
+                    self.BannedPair(buyer_id=my_user_id, seller_id=other_user_id),
+                    self.BannedPair(buyer_id=other_user_id, seller_id=my_user_id),
                 ]
             )
