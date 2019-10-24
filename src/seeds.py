@@ -66,14 +66,7 @@ def seed_db():
             Chat(
                 chat_room_id=str(chat_room_id),
                 message="Start your deal now!",
-                author_id=str(admin_id)
-            )
-        )
-        session.add(
-            Chat(
-                chat_room_id=str(chat_room_id),
-                message="Hello World!",
-                author_id=str(ben_id)
+                author_id=str(aaron_id)
             )
         )
         chat_room_id = getattr(session.query(ChatRoom).filter_by(buyer_id=str(colin_id)).first(), "id")
@@ -81,7 +74,7 @@ def seed_db():
             Chat(
                 chat_room_id=str(chat_room_id),
                 message="Start your deal now!",
-                author_id=str(admin_id)
+                author_id=str(colin_id)
             )
         )
         if session.query(Security).filter_by(name="Grab").count() == 0:

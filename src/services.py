@@ -547,13 +547,14 @@ class ChatRoomService(DefaultService):
                 .group_by(self.Chat.chat_room_id)\
                 .subquery()
                 
-            results = session.query(self.Chat, self.ChatRoom, self.Buyer, self.Seller)\
+            results = (session.query(self.Chat, self.ChatRoom, self.Buyer, self.Seller)\
                 .join(subq, 
                 and_(
                     self.Chat.chat_room_id==subq.c.chat_room_id,
                     self.Chat.created_at==subq.c.maxdate
                 ))\
-                .outerjoin(self.ChatRoom, self.ChatRoom.id==self.Chat.chat_room_id)\
+                .outerjoin(self.ChatRoom, self.ChatRoom.id==self.Chat.chat_room_id))\
+                .filter(or_(self.ChatRoom.seller_id==user_id, self.ChatRoom.buyer_id==user_id))\
                 .outerjoin(self.Buyer, self.Buyer.id==self.ChatRoom.buyer_id)\
                 .outerjoin(self.Seller, self.Seller.id==self.ChatRoom.seller_id)\
                 .all()
