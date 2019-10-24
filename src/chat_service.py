@@ -47,7 +47,5 @@ class ChatSocketService(socketio.AsyncNamespace):
             chat_room_id=data.get("chatRoomId"), 
             message=data.get("message"), 
             author_id=user_id)
-        print(chat)
-        print(chat.get("chatRoomId"))
 
         await self.emit("get_new_message", chat, room=chat.get("chatRoomId"))

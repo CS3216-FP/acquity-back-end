@@ -17,8 +17,8 @@ from src.database import (
     ChatRoom,
     session_scope,
 )
-from sqlalchemy import desc, asc
-from sqlalchemy import or_, and_
+from sqlalchemy.orm import aliased
+from sqlalchemy import desc, asc, funcfilter, or_, and_
 from src.exceptions import (
     InvalidRequestException,
     NoActiveRoundException,
@@ -445,7 +445,10 @@ class BannedPairService(DefaultService):
             )
 
 class ChatService(DefaultService):
-    def __init__(self, config, UserService=UserService, Chat=Chat, ChatRoom=ChatRoom):
+    def __init__(self, config, User=User, UserService=UserService, Chat=Chat, ChatRoom=ChatRoom):
+        self.Buyer=aliased(User)
+        self.Seller=aliased(User)
+        self.User=User
         self.Chat = Chat
         self.UserService = UserService
         self.ChatRoom = ChatRoom
@@ -472,46 +475,56 @@ class ChatService(DefaultService):
             session.flush()
             session.refresh(chat)
             chat = chat.asdict()
+            
+            result = session.query(self.ChatRoom, self.Buyer, self.Seller)\
+                .filter_by(id=chat.get("chat_room_id"))\
+                .outerjoin(self.Buyer, self.Buyer.id==self.ChatRoom.buyer_id)\
+                .outerjoin(self.Seller, self.Seller.id==self.ChatRoom.seller_id)\
+                .all()[0]
+            chat_room = result[0].asdict()
+            buyer = result[1].asdict()
+            seller = result[2].asdict()
 
-            chat_room = session.query(self.ChatRoom).filter_by(id=chat_room_id).one().asdict()
+            (author, dealer) = (seller, buyer) if seller.get("id") == author_id else (buyer, seller)
 
-            dealer_id = chat_room.get("seller_id") \
-                if chat_room.get("buyer_id") == author_id \
-                else chat_room.get("buyer_id")
-            dealer = self.UserService(self.config).get_user(id=dealer_id)
-            chat["dealerName"] = dealer.get("full_name")
-            chat["dealerId"] = dealer.get("full_name")
-            chat["createdAt"] = datetime.timestamp(chat.get("created_at"))
-            chat["updatedAt"] = datetime.timestamp(chat.get("updated_at"))
-            chat["authorName"] = self.UserService(self.config).get_user(id=chat.get("author_id")).get("full_name")
             return {
-                "authorName": self.UserService(self.config).get_user(id=chat.get("author_id")).get("full_name"),
-                "authorId": chat.get("author_id"),
-                "chatRoomId": chat.get("chat_room_id"),
-                "message": chat.get("message"),
+                "dealerName": dealer.get("full_name"),
+                "dealerId": dealer.get("id"),
                 "createdAt": datetime.timestamp(chat.get("created_at")),
                 "updatedAt": datetime.timestamp(chat.get("updated_at")),
+                "authorName": author.get("full_name"),
+                "authorId": author.get("id"),
+                "message": chat.get("message"),
             }
     
     def get_conversation(self, user_id, chat_room_id):
         with session_scope() as session:
-            return [
-                {
-                    "authorName": chat.asdict().get("author_name"),
-                    "authorId": chat.asdict().get("author_id"),
-                    "chatRoomId": chat.asdict().get("chat_room_id"),
-                    "message": chat.asdict().get("message"),
-                    "createdAt": datetime.timestamp(chat.asdict().get("created_at")),
-                    "updatedAt": datetime.timestamp(chat.asdict().get("updated_at")),
-                    "authorName": self.UserService(self.config).get_user(id=chat.asdict().get("author_id")).get("full_name")
-                } for chat in session.query(self.Chat)\
-                    .filter_by(chat_room_id=chat_room_id)
-                    .order_by(asc("created_at"))
-            ]
+            results = session.query(self.Chat, self.User)\
+            .filter(self.Chat.chat_room_id==chat_room_id)\
+            .outerjoin(self.User, self.Chat.author_id==self.User.id)\
+            .all()
+
+            data = []
+            for result in results:
+                chat_result = result[0].asdict()
+                user_result = result[1].asdict()
+                data.append({
+                    "authorName": user_result.get("full_name"),
+                    "authorId": user_result.get("id"),
+                    "chatRoomId": chat_result.get("chat_room_id"),
+                    "message": chat_result.get("message"),
+                    "createdAt": datetime.timestamp(chat_result.get("created_at")),
+                    "updatedAt": datetime.timestamp(chat_result.get("updated_at")),
+                })
+            return data;
 
 
 class ChatRoomService(DefaultService):
-    def __init__(self, config, UserService=UserService, ChatRoom=ChatRoom, ChatService=ChatService):
+    def __init__(self, config, User=User, Chat=Chat, UserService=UserService, ChatRoom=ChatRoom, ChatService=ChatService):
+        self.Buyer=aliased(User)
+        self.Seller=aliased(User)
+        self.User=User
+        self.Chat=Chat
         self.UserService=UserService
         self.ChatRoom = ChatRoom
         self.ChatService = ChatService
@@ -520,7 +533,23 @@ class ChatRoomService(DefaultService):
     def get_chat_rooms(self, user_id):
         rooms = []
         data = []
+        """
         with session_scope() as session:
+            results = ((session.query(self.ChatRoom, self.Chat, self.Buyer, self.Seller)\
+            .filter(self.ChatRoom.buyer_id==user_id))\
+            .outerjoin(self.Chat, self.ChatRoom.id==self.Chat.chat_room_id)\
+            .outerjoin(self.Buyer, self.Buyer.id==self.ChatRoom.buyer_id)\
+            .outerjoin(self.Seller, self.Seller.id==self.ChatRoom.seller_id))\
+            .all()
+
+            
+            
+            for i in results:
+                print(i)
+        """
+
+
+        with session_scope() as session:        
             data = session.query(self.ChatRoom)\
             .filter(or_(self.ChatRoom.buyer_id==user_id, self.ChatRoom.seller_id==user_id))\
             .all()
