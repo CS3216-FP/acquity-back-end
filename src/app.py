@@ -23,7 +23,7 @@ from src.services import (
     ChatService,
 )
 import socketio
-from socket_service import (
+from chat_service import (
     ChatSocketService,
 )
 

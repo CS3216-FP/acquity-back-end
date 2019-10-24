@@ -461,12 +461,11 @@ class ChatService(DefaultService):
                 return {}
             return last_message.asdict()
 
-    def add_message(self, chat_room_id, message, img, author_id):
+    def add_message(self, chat_room_id, message, author_id):
         with session_scope() as session:
             chat = Chat(
                     chat_room_id=str(chat_room_id),
                     message=message,
-                    img=img,
                     author_id=str(author_id),
                 )
             session.add(chat)
@@ -479,23 +478,32 @@ class ChatService(DefaultService):
             dealer_id = chat_room.get("seller_id") \
                 if chat_room.get("buyer_id") == author_id \
                 else chat_room.get("buyer_id")
-            dealer = self.UserService().get_user(id=dealer_id)
-
-            chat["dealer_name"] = dealer.get("full_name")
-            chat["dealer_id"] = dealer.get("full_name")
-            chat["created_at"] = datetime.timestamp(chat.get("created_at"))
-            chat["updated_at"] = datetime.timestamp(chat.get("updated_at"))
-            chat["author_name"] = self.UserService(self.config).get_user(id=chat.get("author_id")).get("full_name")
-            return chat
+            dealer = self.UserService(self.config).get_user(id=dealer_id)
+            chat["dealerName"] = dealer.get("full_name")
+            chat["dealerId"] = dealer.get("full_name")
+            chat["createdAt"] = datetime.timestamp(chat.get("created_at"))
+            chat["updatedAt"] = datetime.timestamp(chat.get("updated_at"))
+            chat["authorName"] = self.UserService(self.config).get_user(id=chat.get("author_id")).get("full_name")
+            return {
+                "authorName": self.UserService(self.config).get_user(id=chat.get("author_id")).get("full_name"),
+                "authorId": chat.get("author_id"),
+                "chatRoomId": chat.get("chat_room_id"),
+                "message": chat.get("message"),
+                "createdAt": datetime.timestamp(chat.get("created_at")),
+                "updatedAt": datetime.timestamp(chat.get("updated_at")),
+            }
     
     def get_conversation(self, user_id, chat_room_id):
         with session_scope() as session:
             return [
                 {
-                    **chat.asdict(),
-                    "created_at": datetime.timestamp(chat.asdict().get("created_at")),
-                    "updated_at": datetime.timestamp(chat.asdict().get("updated_at")),
-                    "author_name": self.UserService(self.config).get_user(id=chat.asdict().get("author_id")).get("full_name")
+                    "authorName": chat.asdict().get("author_name"),
+                    "authorId": chat.asdict().get("author_id"),
+                    "chatRoomId": chat.asdict().get("chat_room_id"),
+                    "message": chat.asdict().get("message"),
+                    "createdAt": datetime.timestamp(chat.asdict().get("created_at")),
+                    "updatedAt": datetime.timestamp(chat.asdict().get("updated_at")),
+                    "authorName": self.UserService(self.config).get_user(id=chat.asdict().get("author_id")).get("full_name")
                 } for chat in session.query(self.Chat)\
                     .filter_by(chat_room_id=chat_room_id)
                     .order_by(asc("created_at"))
@@ -529,13 +537,13 @@ class ChatRoomService(DefaultService):
                     else chat_room.get("buyer_id")
                 dealer = self.UserService(self.config).get_user(id=dealer_id)
                 rooms.append({
-                    "author_name": author.get("full_name"),
-                    "author_id": author_id,
-                    "dealer_name": dealer.get("full_name"),
-                    "dealer_id": dealer_id,
+                    "authorName": author.get("full_name"),
+                    "authorId": author_id,
+                    "dealerName": dealer.get("full_name"),
+                    "dealerId": dealer_id,
                     "message": chat.get("message", "Start Conversation!"),
-                    "created_at": datetime.timestamp(chat.get("created_at", datetime.now())),
-                    "updated_at": datetime.timestamp(chat.get("updated_at", datetime.now())),
-                    "chat_room_id": chat_room.get("id")
+                    "createdAt": datetime.timestamp(chat.get("created_at", datetime.now())),
+                    "updatedAt": datetime.timestamp(chat.get("updated_at", datetime.now())),
+                    "chatRoomId": chat_room.get("id")
                 })
-        return sorted(rooms, key=itemgetter('created_at')) 
+        return sorted(rooms, key=itemgetter('createdAt')) 
