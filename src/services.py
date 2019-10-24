@@ -495,28 +495,37 @@ class ChatService(DefaultService):
                 "authorName": author.get("full_name"),
                 "authorId": author.get("id"),
                 "message": chat.get("message"),
+                "chatRoomId": chat_room.get("id"),
             }
     
     def get_conversation(self, user_id, chat_room_id):
         with session_scope() as session:
-            results = session.query(self.Chat, self.User)\
-            .filter(self.Chat.chat_room_id==chat_room_id)\
-            .outerjoin(self.User, self.Chat.author_id==self.User.id)\
+            results = session.query(self.ChatRoom, self.Chat, self.Buyer, self.Seller)\
+            .filter(self.ChatRoom.id==chat_room_id)\
+            .outerjoin(self.Chat, self.Chat.chat_room_id==self.ChatRoom.id)\
+            .outerjoin(self.Buyer, self.Buyer.id==self.ChatRoom.buyer_id)\
+            .outerjoin(self.Seller, self.Seller.id==self.ChatRoom.seller_id)\
             .all()
 
             data = []
             for result in results:
-                chat_result = result[0].asdict()
-                user_result = result[1].asdict()
+                chat_room_result = result[0].asdict()
+                chat_result = result[1].asdict()
+                buyer = result[2].asdict()
+                seller = result[3].asdict()
+                (author, dealer) = (seller, buyer) if seller.get("id") == user_id else (buyer, seller)
+
                 data.append({
-                    "authorName": user_result.get("full_name"),
-                    "authorId": user_result.get("id"),
-                    "chatRoomId": chat_result.get("chat_room_id"),
-                    "message": chat_result.get("message"),
+                    "dealerName": dealer.get("full_name"),
+                    "dealerId": dealer.get("id"),
                     "createdAt": datetime.timestamp(chat_result.get("created_at")),
                     "updatedAt": datetime.timestamp(chat_result.get("updated_at")),
+                    "authorName": author.get("full_name"),
+                    "authorId": author.get("id"),
+                    "message": chat_result.get("message"),
+                    "chatRoomId": chat_room_result.get("id")
                 })
-            return data;
+            return sorted(data, key=itemgetter('createdAt'))
 
 
 class ChatRoomService(DefaultService):
@@ -531,48 +540,38 @@ class ChatRoomService(DefaultService):
         self.config = config
 
     def get_chat_rooms(self, user_id):
-        rooms = []
         data = []
-        """
         with session_scope() as session:
-            results = ((session.query(self.ChatRoom, self.Chat, self.Buyer, self.Seller)\
-            .filter(self.ChatRoom.buyer_id==user_id))\
-            .outerjoin(self.Chat, self.ChatRoom.id==self.Chat.chat_room_id)\
-            .outerjoin(self.Buyer, self.Buyer.id==self.ChatRoom.buyer_id)\
-            .outerjoin(self.Seller, self.Seller.id==self.ChatRoom.seller_id))\
-            .all()
 
-            
-            
-            for i in results:
-                print(i)
-        """
+            subq = session.query(self.Chat.chat_room_id, func.max(self.Chat.created_at).label("maxdate"))\
+                .group_by(self.Chat.chat_room_id)\
+                .subquery()
+                
+            results = session.query(self.Chat, self.ChatRoom, self.Buyer, self.Seller)\
+                .join(subq, 
+                and_(
+                    self.Chat.chat_room_id==subq.c.chat_room_id,
+                    self.Chat.created_at==subq.c.maxdate
+                ))\
+                .outerjoin(self.ChatRoom, self.ChatRoom.id==self.Chat.chat_room_id)\
+                .outerjoin(self.Buyer, self.Buyer.id==self.ChatRoom.buyer_id)\
+                .outerjoin(self.Seller, self.Seller.id==self.ChatRoom.seller_id)\
+                .all()
+            for result in results:
+                chat_result = result[0].asdict()
+                chat_room_result = result[1].asdict()
+                buyer = result[2].asdict()
+                seller = result[3].asdict()
+                (author, dealer) = (seller, buyer) if seller.get("id") == user_id else (buyer, seller)
 
-
-        with session_scope() as session:        
-            data = session.query(self.ChatRoom)\
-            .filter(or_(self.ChatRoom.buyer_id==user_id, self.ChatRoom.seller_id==user_id))\
-            .all()
-            
-            for chat_room in data:
-                chat_room = chat_room.asdict()
-                chat = self.ChatService(self.config).get_last_message(chat_room_id=chat_room.get("id"))
-
-                author_id = chat.get("author_id", None)
-                author = {} if author_id == None else self.UserService(self.config).get_user(id=author_id)
-
-                dealer_id = chat_room.get("seller_id") \
-                    if chat_room.get("buyer_id") == user_id \
-                    else chat_room.get("buyer_id")
-                dealer = self.UserService(self.config).get_user(id=dealer_id)
-                rooms.append({
-                    "authorName": author.get("full_name"),
-                    "authorId": author_id,
+                data.append({
                     "dealerName": dealer.get("full_name"),
-                    "dealerId": dealer_id,
-                    "message": chat.get("message", "Start Conversation!"),
-                    "createdAt": datetime.timestamp(chat.get("created_at", datetime.now())),
-                    "updatedAt": datetime.timestamp(chat.get("updated_at", datetime.now())),
-                    "chatRoomId": chat_room.get("id")
+                    "dealerId": dealer.get("id"),
+                    "createdAt": datetime.timestamp(chat_result.get("created_at")),
+                    "updatedAt": datetime.timestamp(chat_result.get("updated_at")),
+                    "authorName": author.get("full_name"),
+                    "authorId": author.get("id"),
+                    "message": chat_result.get("message"),
+                    "chatRoomId": chat_room_result.get("id")
                 })
-        return sorted(rooms, key=itemgetter('createdAt')) 
+        return sorted(data, key=itemgetter('createdAt'), reverse=True) 

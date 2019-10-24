@@ -5,6 +5,16 @@ from src.database import Security, User, session_scope, ChatRoom, Chat
 
 def seed_db():
     with session_scope() as session:
+        if session.query(User).filter_by(email="admin@acquity.com").count() == 0:
+            session.add(
+                User(
+                    email="admin@acquity.com",
+                    hashed_password=argon2.hash("acquity"),
+                    full_name="Acquity",
+                    can_buy=True,
+                    can_sell=True,
+                )
+            )
         if session.query(User).filter_by(email="a@a.com").count() == 0:
             session.add(
                 User(
@@ -35,6 +45,7 @@ def seed_db():
                     can_sell=False,
                 )
             )
+        admin_id = getattr(session.query(User).filter_by(email="admin@acquity.com").first(), "id")
         aaron_id = getattr(session.query(User).filter_by(email="a@a.com").first(), "id")
         ben_id = getattr(session.query(User).filter_by(email="b@b.com").first(), "id")
         colin_id = getattr(session.query(User).filter_by(email="c@c.com").first(), "id")
@@ -46,17 +57,31 @@ def seed_db():
         )
         session.add(
             ChatRoom(
-                seller_id=str(colin_id),
-                buyer_id=str(ben_id),
+                seller_id=str(ben_id),
+                buyer_id=str(colin_id),
             )
         )
-
         chat_room_id = getattr(session.query(ChatRoom).filter_by(seller_id=str(aaron_id)).first(), "id")
         session.add(
             Chat(
                 chat_room_id=str(chat_room_id),
-                message="hello world",
+                message="Start your deal now!",
+                author_id=str(admin_id)
+            )
+        )
+        session.add(
+            Chat(
+                chat_room_id=str(chat_room_id),
+                message="Hello World!",
                 author_id=str(ben_id)
+            )
+        )
+        chat_room_id = getattr(session.query(ChatRoom).filter_by(buyer_id=str(colin_id)).first(), "id")
+        session.add(
+            Chat(
+                chat_room_id=str(chat_room_id),
+                message="Start your deal now!",
+                author_id=str(admin_id)
             )
         )
         if session.query(Security).filter_by(name="Grab").count() == 0:
