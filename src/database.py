@@ -72,15 +72,6 @@ class User(Base):
     bans_as_seller = relationship(
         "BannedPair", back_populates="seller", foreign_keys="[BannedPair.seller_id]"
     )
-    seller = relationship(
-        "ChatRoom", foreign_keys="ChatRoom.seller_id", back_populates="seller"
-    )
-    buyer = relationship(
-        "ChatRoom", foreign_keys="ChatRoom.buyer_id", back_populates="buyer"
-    )
-    author = relationship(
-        "Chat", foreign_keys="Chat.author_id", back_populates="author"
-    )
 
 
 class Security(Base):
@@ -174,10 +165,6 @@ class ChatRoom(Base):
     seller_id = Column(UUID, ForeignKey("users.id"), nullable=False)
     buyer_id = Column(UUID, ForeignKey("users.id"), nullable=False)
 
-    seller = relationship("User", foreign_keys=[seller_id], back_populates="seller")
-    buyer = relationship("User", foreign_keys=[buyer_id], back_populates="buyer")
-    room = relationship("Chat", back_populates="room")
-
     __table_args__ = (UniqueConstraint("seller_id", "buyer_id"),)
 
 
@@ -187,9 +174,6 @@ class Chat(Base):
     chat_room_id = Column(UUID, ForeignKey("chat_room.id"), nullable=False)
     message = Column(Text)
     author_id = Column(UUID, ForeignKey("users.id"), nullable=False)
-
-    room = relationship("ChatRoom", back_populates="room")
-    author = relationship("User", foreign_keys=[author_id], back_populates="author")
 
 
 engine = create_engine(APP_CONFIG["DATABASE_URL"])

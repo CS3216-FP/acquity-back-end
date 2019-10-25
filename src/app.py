@@ -39,7 +39,6 @@ app.chat_service = ChatService(app.config)
 
 sio = socketio.AsyncServer(async_mode="sanic", cors_allowed_origins=[])
 sio.attach(app)
-app.config["CORS_SUPPORTS_CREDENTIALS"] = True
 sio.register_namespace(ChatSocketService("/v1/chat", app.config))
 initialize_cors(app)
 

@@ -455,6 +455,20 @@ class BannedPairService(DefaultService):
                 ]
             )
 
+def chat_serializer(chat_room_result, chat_result, buyer, seller, user_id):
+    (author, dealer) = (
+        (seller, buyer) if seller.get("id") == user_id else (buyer, seller)
+    )
+    return {
+        "dealerName": dealer.get("full_name"),
+        "dealerId": dealer.get("id"),
+        "createdAt": datetime.timestamp(chat_result.get("created_at")),
+        "updatedAt": datetime.timestamp(chat_result.get("updated_at")),
+        "authorName": author.get("full_name"),
+        "authorId": author.get("id"),
+        "message": chat_result.get("message"),
+        "chatRoomId": chat_room_result.get("id"),
+    }
 
 class ChatService(DefaultService):
     def __init__(
@@ -467,18 +481,6 @@ class ChatService(DefaultService):
         self.UserService = UserService
         self.ChatRoom = ChatRoom
         self.config = config
-
-    def get_last_message(self, chat_room_id):
-        with session_scope() as session:
-            last_message = (
-                session.query(self.Chat)
-                .filter_by(chat_room_id=chat_room_id)
-                .order_by(desc("created_at"))
-                .first()
-            )
-            if last_message == None:
-                return {}
-            return last_message.asdict()
 
     def add_message(self, chat_room_id, message, author_id):
         with session_scope() as session:
@@ -499,24 +501,14 @@ class ChatService(DefaultService):
                 .outerjoin(self.Seller, self.Seller.id == self.ChatRoom.seller_id)
                 .all()[0]
             )
-            chat_room = result[0].asdict()
-            buyer = result[1].asdict()
-            seller = result[2].asdict()
-
-            (author, dealer) = (
-                (seller, buyer) if seller.get("id") == author_id else (buyer, seller)
+            return chat_serializer(
+                result[0].asdict(), 
+                chat, 
+                result[1].asdict(), 
+                result[2].asdict(),
+                user_id=author_id
             )
-
-            return {
-                "dealerName": dealer.get("full_name"),
-                "dealerId": dealer.get("id"),
-                "createdAt": datetime.timestamp(chat.get("created_at")),
-                "updatedAt": datetime.timestamp(chat.get("updated_at")),
-                "authorName": author.get("full_name"),
-                "authorId": author.get("id"),
-                "message": chat.get("message"),
-                "chatRoomId": chat_room.get("id"),
-            }
+            
 
     def get_conversation(self, user_id, chat_room_id):
         with session_scope() as session:
@@ -531,27 +523,16 @@ class ChatService(DefaultService):
 
             data = []
             for result in results:
-                chat_room_result = result[0].asdict()
-                chat_result = result[1].asdict()
-                buyer = result[2].asdict()
-                seller = result[3].asdict()
-                (author, dealer) = (
-                    (seller, buyer) if seller.get("id") == user_id else (buyer, seller)
-                )
-
                 data.append(
-                    {
-                        "dealerName": dealer.get("full_name"),
-                        "dealerId": dealer.get("id"),
-                        "createdAt": datetime.timestamp(chat_result.get("created_at")),
-                        "updatedAt": datetime.timestamp(chat_result.get("updated_at")),
-                        "authorName": author.get("full_name"),
-                        "authorId": author.get("id"),
-                        "message": chat_result.get("message"),
-                        "chatRoomId": chat_room_result.get("id"),
-                    }
+                    chat_serializer(
+                        result[0].asdict(), 
+                        result[1].asdict(), 
+                        result[2].asdict(), 
+                        result[3].asdict(),
+                        user_id=user_id
+                    )
                 )
-            return sorted(data, key=itemgetter("createdAt"))
+            return sorted(data, key=lambda item: item["createdAt"])
 
 
 class ChatRoomService(DefaultService):
@@ -611,24 +592,13 @@ class ChatRoomService(DefaultService):
                 .all()
             )
             for result in results:
-                chat_result = result[0].asdict()
-                chat_room_result = result[1].asdict()
-                buyer = result[2].asdict()
-                seller = result[3].asdict()
-                (author, dealer) = (
-                    (seller, buyer) if seller.get("id") == user_id else (buyer, seller)
-                )
-
                 data.append(
-                    {
-                        "dealerName": dealer.get("full_name"),
-                        "dealerId": dealer.get("id"),
-                        "createdAt": datetime.timestamp(chat_result.get("created_at")),
-                        "updatedAt": datetime.timestamp(chat_result.get("updated_at")),
-                        "authorName": author.get("full_name"),
-                        "authorId": author.get("id"),
-                        "message": chat_result.get("message"),
-                        "chatRoomId": chat_room_result.get("id"),
-                    }
+                    chat_serializer(
+                        result[1].asdict(), 
+                        result[0].asdict(), 
+                        result[2].asdict(), 
+                        result[3].asdict(),
+                        user_id=user_id
+                    )
                 )
-        return sorted(data, key=itemgetter("createdAt"), reverse=True)
+        return sorted(data, key=lambda item: item["createdAt"], reverse=True)

@@ -1,7 +1,6 @@
 import jwt
 import socketio
 
-from src.config import APP_CONFIG
 from src.services import ChatRoomService, ChatService
 
 
@@ -20,7 +19,7 @@ class ChatSocketService(socketio.AsyncNamespace):
 
     async def authenticate(self, encoded_token):
         decoded_token = jwt.decode(
-            encoded_token, APP_CONFIG.get("SANIC_JWT_SECRET"), algorithms=["HS256"]
+            encoded_token, self.config.get("SANIC_JWT_SECRET"), algorithms=["HS256"]
         )
         user_id = decoded_token.get("id")
         return user_id
