@@ -1,24 +1,25 @@
 from datetime import datetime
-
 from operator import itemgetter
+
 import requests
 from passlib.hash import argon2
+from sqlalchemy import and_, asc, desc, funcfilter, or_
+from sqlalchemy.orm import aliased
 from sqlalchemy.orm.exc import NoResultFound
 from sqlalchemy.sql import func
+
 from src.database import (
     BannedPair,
     BuyOrder,
+    Chat,
+    ChatRoom,
     Match,
     Round,
     Security,
     SellOrder,
     User,
-    Chat,
-    ChatRoom,
     session_scope,
 )
-from sqlalchemy.orm import aliased
-from sqlalchemy import desc, asc, funcfilter, or_, and_
 from src.exceptions import (
     InvalidRequestException,
     NoActiveRoundException,
@@ -444,11 +445,14 @@ class BannedPairService(DefaultService):
                 ]
             )
 
+
 class ChatService(DefaultService):
-    def __init__(self, config, User=User, UserService=UserService, Chat=Chat, ChatRoom=ChatRoom):
-        self.Buyer=aliased(User)
-        self.Seller=aliased(User)
-        self.User=User
+    def __init__(
+        self, config, User=User, UserService=UserService, Chat=Chat, ChatRoom=ChatRoom
+    ):
+        self.Buyer = aliased(User)
+        self.Seller = aliased(User)
+        self.User = User
         self.Chat = Chat
         self.UserService = UserService
         self.ChatRoom = ChatRoom
@@ -456,10 +460,12 @@ class ChatService(DefaultService):
 
     def get_last_message(self, chat_room_id):
         with session_scope() as session:
-            last_message = session.query(self.Chat)\
-                .filter_by(chat_room_id=chat_room_id)\
-                .order_by(desc("created_at"))\
+            last_message = (
+                session.query(self.Chat)
+                .filter_by(chat_room_id=chat_room_id)
+                .order_by(desc("created_at"))
                 .first()
+            )
             if last_message == None:
                 return {}
             return last_message.asdict()
@@ -467,25 +473,29 @@ class ChatService(DefaultService):
     def add_message(self, chat_room_id, message, author_id):
         with session_scope() as session:
             chat = Chat(
-                    chat_room_id=str(chat_room_id),
-                    message=message,
-                    author_id=str(author_id),
-                )
+                chat_room_id=str(chat_room_id),
+                message=message,
+                author_id=str(author_id),
+            )
             session.add(chat)
             session.flush()
             session.refresh(chat)
             chat = chat.asdict()
-            
-            result = session.query(self.ChatRoom, self.Buyer, self.Seller)\
-                .filter_by(id=chat.get("chat_room_id"))\
-                .outerjoin(self.Buyer, self.Buyer.id==self.ChatRoom.buyer_id)\
-                .outerjoin(self.Seller, self.Seller.id==self.ChatRoom.seller_id)\
+
+            result = (
+                session.query(self.ChatRoom, self.Buyer, self.Seller)
+                .filter_by(id=chat.get("chat_room_id"))
+                .outerjoin(self.Buyer, self.Buyer.id == self.ChatRoom.buyer_id)
+                .outerjoin(self.Seller, self.Seller.id == self.ChatRoom.seller_id)
                 .all()[0]
+            )
             chat_room = result[0].asdict()
             buyer = result[1].asdict()
             seller = result[2].asdict()
 
-            (author, dealer) = (seller, buyer) if seller.get("id") == author_id else (buyer, seller)
+            (author, dealer) = (
+                (seller, buyer) if seller.get("id") == author_id else (buyer, seller)
+            )
 
             return {
                 "dealerName": dealer.get("full_name"),
@@ -497,15 +507,17 @@ class ChatService(DefaultService):
                 "message": chat.get("message"),
                 "chatRoomId": chat_room.get("id"),
             }
-    
+
     def get_conversation(self, user_id, chat_room_id):
         with session_scope() as session:
-            results = session.query(self.ChatRoom, self.Chat, self.Buyer, self.Seller)\
-            .filter(self.ChatRoom.id==chat_room_id)\
-            .outerjoin(self.Chat, self.Chat.chat_room_id==self.ChatRoom.id)\
-            .outerjoin(self.Buyer, self.Buyer.id==self.ChatRoom.buyer_id)\
-            .outerjoin(self.Seller, self.Seller.id==self.ChatRoom.seller_id)\
-            .all()
+            results = (
+                session.query(self.ChatRoom, self.Chat, self.Buyer, self.Seller)
+                .filter(self.ChatRoom.id == chat_room_id)
+                .outerjoin(self.Chat, self.Chat.chat_room_id == self.ChatRoom.id)
+                .outerjoin(self.Buyer, self.Buyer.id == self.ChatRoom.buyer_id)
+                .outerjoin(self.Seller, self.Seller.id == self.ChatRoom.seller_id)
+                .all()
+            )
 
             data = []
             for result in results:
@@ -513,28 +525,40 @@ class ChatService(DefaultService):
                 chat_result = result[1].asdict()
                 buyer = result[2].asdict()
                 seller = result[3].asdict()
-                (author, dealer) = (seller, buyer) if seller.get("id") == user_id else (buyer, seller)
+                (author, dealer) = (
+                    (seller, buyer) if seller.get("id") == user_id else (buyer, seller)
+                )
 
-                data.append({
-                    "dealerName": dealer.get("full_name"),
-                    "dealerId": dealer.get("id"),
-                    "createdAt": datetime.timestamp(chat_result.get("created_at")),
-                    "updatedAt": datetime.timestamp(chat_result.get("updated_at")),
-                    "authorName": author.get("full_name"),
-                    "authorId": author.get("id"),
-                    "message": chat_result.get("message"),
-                    "chatRoomId": chat_room_result.get("id")
-                })
-            return sorted(data, key=itemgetter('createdAt'))
+                data.append(
+                    {
+                        "dealerName": dealer.get("full_name"),
+                        "dealerId": dealer.get("id"),
+                        "createdAt": datetime.timestamp(chat_result.get("created_at")),
+                        "updatedAt": datetime.timestamp(chat_result.get("updated_at")),
+                        "authorName": author.get("full_name"),
+                        "authorId": author.get("id"),
+                        "message": chat_result.get("message"),
+                        "chatRoomId": chat_room_result.get("id"),
+                    }
+                )
+            return sorted(data, key=itemgetter("createdAt"))
 
 
 class ChatRoomService(DefaultService):
-    def __init__(self, config, User=User, Chat=Chat, UserService=UserService, ChatRoom=ChatRoom, ChatService=ChatService):
-        self.Buyer=aliased(User)
-        self.Seller=aliased(User)
-        self.User=User
-        self.Chat=Chat
-        self.UserService=UserService
+    def __init__(
+        self,
+        config,
+        User=User,
+        Chat=Chat,
+        UserService=UserService,
+        ChatRoom=ChatRoom,
+        ChatService=ChatService,
+    ):
+        self.Buyer = aliased(User)
+        self.Seller = aliased(User)
+        self.User = User
+        self.Chat = Chat
+        self.UserService = UserService
         self.ChatRoom = ChatRoom
         self.ChatService = ChatService
         self.config = config
@@ -543,36 +567,58 @@ class ChatRoomService(DefaultService):
         data = []
         with session_scope() as session:
 
-            subq = session.query(self.Chat.chat_room_id, func.max(self.Chat.created_at).label("maxdate"))\
-                .group_by(self.Chat.chat_room_id)\
+            subq = (
+                session.query(
+                    self.Chat.chat_room_id,
+                    func.max(self.Chat.created_at).label("maxdate"),
+                )
+                .group_by(self.Chat.chat_room_id)
                 .subquery()
-                
-            results = (session.query(self.Chat, self.ChatRoom, self.Buyer, self.Seller)\
-                .join(subq, 
-                and_(
-                    self.Chat.chat_room_id==subq.c.chat_room_id,
-                    self.Chat.created_at==subq.c.maxdate
-                ))\
-                .outerjoin(self.ChatRoom, self.ChatRoom.id==self.Chat.chat_room_id))\
-                .filter(or_(self.ChatRoom.seller_id==user_id, self.ChatRoom.buyer_id==user_id))\
-                .outerjoin(self.Buyer, self.Buyer.id==self.ChatRoom.buyer_id)\
-                .outerjoin(self.Seller, self.Seller.id==self.ChatRoom.seller_id)\
+            )
+
+            results = (
+                (
+                    session.query(self.Chat, self.ChatRoom, self.Buyer, self.Seller)
+                    .join(
+                        subq,
+                        and_(
+                            self.Chat.chat_room_id == subq.c.chat_room_id,
+                            self.Chat.created_at == subq.c.maxdate,
+                        ),
+                    )
+                    .outerjoin(
+                        self.ChatRoom, self.ChatRoom.id == self.Chat.chat_room_id
+                    )
+                )
+                .filter(
+                    or_(
+                        self.ChatRoom.seller_id == user_id,
+                        self.ChatRoom.buyer_id == user_id,
+                    )
+                )
+                .outerjoin(self.Buyer, self.Buyer.id == self.ChatRoom.buyer_id)
+                .outerjoin(self.Seller, self.Seller.id == self.ChatRoom.seller_id)
                 .all()
+            )
             for result in results:
                 chat_result = result[0].asdict()
                 chat_room_result = result[1].asdict()
                 buyer = result[2].asdict()
                 seller = result[3].asdict()
-                (author, dealer) = (seller, buyer) if seller.get("id") == user_id else (buyer, seller)
+                (author, dealer) = (
+                    (seller, buyer) if seller.get("id") == user_id else (buyer, seller)
+                )
 
-                data.append({
-                    "dealerName": dealer.get("full_name"),
-                    "dealerId": dealer.get("id"),
-                    "createdAt": datetime.timestamp(chat_result.get("created_at")),
-                    "updatedAt": datetime.timestamp(chat_result.get("updated_at")),
-                    "authorName": author.get("full_name"),
-                    "authorId": author.get("id"),
-                    "message": chat_result.get("message"),
-                    "chatRoomId": chat_room_result.get("id")
-                })
-        return sorted(data, key=itemgetter('createdAt'), reverse=True) 
+                data.append(
+                    {
+                        "dealerName": dealer.get("full_name"),
+                        "dealerId": dealer.get("id"),
+                        "createdAt": datetime.timestamp(chat_result.get("created_at")),
+                        "updatedAt": datetime.timestamp(chat_result.get("updated_at")),
+                        "authorName": author.get("full_name"),
+                        "authorId": author.get("id"),
+                        "message": chat_result.get("message"),
+                        "chatRoomId": chat_room_result.get("id"),
+                    }
+                )
+        return sorted(data, key=itemgetter("createdAt"), reverse=True)

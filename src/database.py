@@ -71,10 +71,15 @@ class User(Base):
     bans_as_seller = relationship(
         "BannedPair", back_populates="seller", foreign_keys="[BannedPair.seller_id]"
     )
-    seller = relationship("ChatRoom", foreign_keys='ChatRoom.seller_id', back_populates="seller")
-    buyer = relationship("ChatRoom", foreign_keys='ChatRoom.buyer_id', back_populates="buyer")
-    author = relationship("Chat", foreign_keys='Chat.author_id', back_populates="author")
-
+    seller = relationship(
+        "ChatRoom", foreign_keys="ChatRoom.seller_id", back_populates="seller"
+    )
+    buyer = relationship(
+        "ChatRoom", foreign_keys="ChatRoom.buyer_id", back_populates="buyer"
+    )
+    author = relationship(
+        "Chat", foreign_keys="Chat.author_id", back_populates="author"
+    )
 
 
 class Security(Base):
@@ -161,6 +166,7 @@ class BannedPair(Base):
 
     __table_args__ = (UniqueConstraint("buyer_id", "seller_id"),)
 
+
 class ChatRoom(Base):
     __tablename__ = "chat_room"
 
@@ -171,9 +177,7 @@ class ChatRoom(Base):
     buyer = relationship("User", foreign_keys=[buyer_id], back_populates="buyer")
     room = relationship("Chat", back_populates="room")
 
-    __table_args__ = (
-        UniqueConstraint('seller_id','buyer_id'),
-        )    
+    __table_args__ = (UniqueConstraint("seller_id", "buyer_id"),)
 
 
 class Chat(Base):

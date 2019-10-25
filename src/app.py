@@ -1,5 +1,6 @@
 import traceback
 
+import socketio
 from sanic import Sanic
 from sanic.exceptions import SanicException
 from sanic.response import json
@@ -7,24 +8,21 @@ from sanic_cors.extension import CORS as initialize_cors
 from sanic_jwt import Initialize as initialize_jwt
 from sanic_jwt import Responses
 
+from chat_service import ChatSocketService
 from src.api import blueprint, user_login
 from src.config import APP_CONFIG
 from src.exceptions import AcquityException
 from src.services import (
     BannedPairService,
     BuyOrderService,
+    ChatRoomService,
+    ChatService,
     LinkedinService,
     MatchService,
     RoundService,
     SecurityService,
     SellOrderService,
     UserService,
-    ChatRoomService,
-    ChatService,
-)
-import socketio
-from chat_service import (
-    ChatSocketService,
 )
 
 app = Sanic(load_env=False)
@@ -41,10 +39,10 @@ app.banned_pair_service = BannedPairService(app.config)
 app.chat_room_service = ChatRoomService(app.config)
 app.chat_service = ChatService(app.config)
 
-sio = socketio.AsyncServer(async_mode='sanic', cors_allowed_origins=[])
+sio = socketio.AsyncServer(async_mode="sanic", cors_allowed_origins=[])
 sio.attach(app)
-app.config['CORS_SUPPORTS_CREDENTIALS'] = True
-sio.register_namespace(ChatSocketService('/v1/chat', app.config))
+app.config["CORS_SUPPORTS_CREDENTIALS"] = True
+sio.register_namespace(ChatSocketService("/v1/chat", app.config))
 initialize_cors(app)
 
 
