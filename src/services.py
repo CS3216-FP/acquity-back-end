@@ -461,14 +461,14 @@ def chat_serializer(chat_room_result, chat_result, buyer, seller, user_id):
         (seller, buyer) if seller.get("id") == user_id else (buyer, seller)
     )
     return {
-        "dealerName": dealer.get("full_name"),
-        "dealerId": dealer.get("id"),
-        "createdAt": datetime.timestamp(chat_result.get("created_at")),
-        "updatedAt": datetime.timestamp(chat_result.get("updated_at")),
-        "authorName": author.get("full_name"),
-        "authorId": author.get("id"),
+        "dealer_name": dealer.get("full_name"),
+        "dealer_id": dealer.get("id"),
+        "created_at": datetime.timestamp(chat_result.get("created_at")),
+        "updated_at": datetime.timestamp(chat_result.get("updated_at")),
+        "author_name": author.get("full_name"),
+        "author_id": author.get("id"),
         "message": chat_result.get("message"),
-        "chatRoomId": chat_room_result.get("id"),
+        "chatRoom_id": chat_room_result.get("id"),
     }
 
 
@@ -533,7 +533,7 @@ class ChatService(DefaultService):
                         user_id=user_id,
                     )
                 )
-            return sorted(data, key=lambda item: item["createdAt"])
+            return sorted(data, key=lambda item: item["created_at"])
 
 
 class ChatRoomService(DefaultService):
@@ -602,4 +602,4 @@ class ChatRoomService(DefaultService):
                         user_id=user_id,
                     )
                 )
-        return sorted(data, key=lambda item: item["createdAt"], reverse=True)
+        return sorted(data, key=lambda item: item["created_at"], reverse=True)
