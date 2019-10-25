@@ -1,6 +1,5 @@
-from datetime import datetime
-from operator import itemgetter
 from datetime import datetime, timezone
+from operator import itemgetter
 from urllib.parse import quote
 
 import requests

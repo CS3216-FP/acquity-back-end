@@ -8,8 +8,8 @@ from sanic_cors.extension import CORS as initialize_cors
 from sanic_jwt import Initialize as initialize_jwt
 from sanic_jwt import Responses
 
-from src.chat_service import ChatSocketService
 from src.api import blueprint, user_login
+from src.chat_service import ChatSocketService
 from src.config import APP_CONFIG
 from src.exceptions import AcquityException
 from src.services import (
