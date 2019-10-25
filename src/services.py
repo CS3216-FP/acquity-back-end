@@ -501,7 +501,7 @@ class ChatService(DefaultService):
                 .filter_by(id=chat.get("chat_room_id"))
                 .outerjoin(self.Buyer, self.Buyer.id == self.ChatRoom.buyer_id)
                 .outerjoin(self.Seller, self.Seller.id == self.ChatRoom.seller_id)
-                .all()[0]
+                .one()
             )
             return serialize_chat(
                 chat_room_result=result[0].asdict(),
