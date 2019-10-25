@@ -456,7 +456,7 @@ class BannedPairService(DefaultService):
             )
 
 
-def chat_serializer(chat_room_result, chat_result, buyer, seller, user_id):
+def serialize_chat(chat_room_result, chat_result, buyer, seller, user_id):
     (author, dealer) = (
         (seller, buyer) if seller.get("id") == user_id else (buyer, seller)
     )
@@ -503,11 +503,11 @@ class ChatService(DefaultService):
                 .outerjoin(self.Seller, self.Seller.id == self.ChatRoom.seller_id)
                 .all()[0]
             )
-            return chat_serializer(
-                result[0].asdict(),
-                chat,
-                result[1].asdict(),
-                result[2].asdict(),
+            return serialize_chat(
+                chat_room_result=result[0].asdict(),
+                chat_result=chat,
+                buyer=result[1].asdict(),
+                seller=result[2].asdict(),
                 user_id=author_id,
             )
 
@@ -525,11 +525,11 @@ class ChatService(DefaultService):
             data = []
             for result in results:
                 data.append(
-                    chat_serializer(
-                        result[0].asdict(),
-                        result[1].asdict(),
-                        result[2].asdict(),
-                        result[3].asdict(),
+                    serialize_chat(
+                        chat_room_result=result[0].asdict(),
+                        chat_result=result[1].asdict(),
+                        buyer=result[2].asdict(),
+                        seller=result[3].asdict(),
                         user_id=user_id,
                     )
                 )
@@ -594,11 +594,11 @@ class ChatRoomService(DefaultService):
             )
             for result in results:
                 data.append(
-                    chat_serializer(
-                        result[1].asdict(),
-                        result[0].asdict(),
-                        result[2].asdict(),
-                        result[3].asdict(),
+                    serialize_chat(
+                        chat_room_result=result[1].asdict(),
+                        chat_result=result[0].asdict(),
+                        buyer=result[2].asdict(),
+                        seller=result[3].asdict(),
                         user_id=user_id,
                     )
                 )

@@ -160,7 +160,7 @@ class BannedPair(Base):
 
 
 class ChatRoom(Base):
-    __tablename__ = "chat_room"
+    __tablename__ = "chat_rooms"
 
     seller_id = Column(UUID, ForeignKey("users.id"), nullable=False)
     buyer_id = Column(UUID, ForeignKey("users.id"), nullable=False)
@@ -169,10 +169,10 @@ class ChatRoom(Base):
 
 
 class Chat(Base):
-    __tablename__ = "chat"
+    __tablename__ = "chats"
 
-    chat_room_id = Column(UUID, ForeignKey("chat_room.id"), nullable=False)
-    message = Column(Text)
+    chat_room_id = Column(UUID, ForeignKey("chat_rooms.id"), nullable=False)
+    message = Column(Text, nullable=False)
     author_id = Column(UUID, ForeignKey("users.id"), nullable=False)
 
 
