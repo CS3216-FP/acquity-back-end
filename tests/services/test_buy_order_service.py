@@ -5,11 +5,7 @@ import pytest
 
 from src.config import APP_CONFIG
 from src.database import BuyOrder, Round, Security, User, session_scope
-from src.exceptions import (
-    NoActiveRoundException,
-    ResourceNotOwnedException,
-    UnauthorizedException,
-)
+from src.exceptions import ResourceNotOwnedException, UnauthorizedException
 from src.services import BuyOrderService
 from tests.fixtures import create_buy_order, create_round, create_security, create_user
 from tests.utils import assert_dict_in
@@ -109,6 +105,24 @@ def test_create_order__unauthorized():
         buy_order_service.create_order(
             user_id=user_id, number_of_shares=20, price=30, security_id=security_id
         )
+
+
+def test_create_order__limit_reached():
+    user_id = create_user()["id"]
+    security_id = create_security()["id"]
+    round = create_round()
+
+    buy_order_params = {
+        "user_id": user_id,
+        "number_of_shares": 20,
+        "price": 30,
+        "security_id": security_id,
+    }
+
+    for _ in range(APP_CONFIG["ACQUITY_BUY_ORDER_PER_ROUND_LIMIT"]):
+        buy_order_service.create_order(**buy_order_params)
+    with pytest.raises(UnauthorizedException):
+        buy_order_service.create_order(**buy_order_params)
 
 
 def test_edit_order():

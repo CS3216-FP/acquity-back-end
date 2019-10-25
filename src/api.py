@@ -32,10 +32,10 @@ async def user_login(request):
     return {"id": user["id"]}
 
 
-@blueprint.post("/invite/")
+@blueprint.post("/user/invite/seller")
 @auth_required
 @expects_json_object
-async def create_invite(request, user):
+async def invite_seller(request, user):
     return json(
         request.app.user_service.invite_to_be_seller(
             **request.json, inviter_id=user["id"]
@@ -43,12 +43,13 @@ async def create_invite(request, user):
     )
 
 
-@blueprint.post("/user/linkedin/")
+@blueprint.post("/user/invite/buyer")
 @auth_required
-async def create_user_linkedin(request, user):
+@expects_json_object
+async def invite_buyer(request, user):
     return json(
-        request.app.linkedin_service.activate_buyer_privileges(
-            **request.json, user_email=user.get("email")
+        request.app.user_service.invite_to_be_buyer(
+            **request.json, inviter_id=user["id"]
         )
     )
 
@@ -163,3 +164,10 @@ async def ban_user(request, user):
     return json(
         request.app.banned_pair_service.ban_user(**request.json, my_user_id=user["id"])
     )
+
+
+@blueprint.post("/match/<token>")
+async def run_matches(request, token):
+    if token != request.app.config["TEMPORIZE_TOKEN"]:
+        return json(None)
+    return json(request.app.match_service.run_matches(token))
