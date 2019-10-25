@@ -41,7 +41,7 @@ def seed_db():
                 "can_buy": True,
                 "can_sell": True,
                 "is_committee": False,
-            }
+            },
         ]
         for user in user_seeds:
             if session.query(User).filter_by(email=user.get("email")).count() == 0:
@@ -52,9 +52,9 @@ def seed_db():
                         full_name=user.get("full_name"),
                         can_buy=user.get("can_buy"),
                         can_sell=user.get("can_sell"),
-                        is_committee=user.get("is_committee")
+                        is_committee=user.get("is_committee"),
                     )
-                )            
+                )
 
         # getting user ids
         admin_id = session.query(User).filter_by(email="admin@acquity.com").first().id
@@ -69,7 +69,9 @@ def seed_db():
             session.add(ChatRoom(seller_id=str(ben_id), buyer_id=str(colin_id)))
 
         # creating chats
-        chat_room_id = session.query(ChatRoom).filter_by(seller_id=str(aaron_id)).first().id
+        chat_room_id = (
+            session.query(ChatRoom).filter_by(seller_id=str(aaron_id)).first().id
+        )
         if session.query(Chat).filter_by(chat_room_id=str(chat_room_id)).count() == 0:
             session.add(
                 Chat(
@@ -78,7 +80,9 @@ def seed_db():
                     author_id=str(aaron_id),
                 )
             )
-        chat_room_id = session.query(ChatRoom).filter_by(buyer_id=str(colin_id)).first().id
+        chat_room_id = (
+            session.query(ChatRoom).filter_by(buyer_id=str(colin_id)).first().id
+        )
         if session.query(Chat).filter_by(chat_room_id=str(chat_room_id)).count() == 0:
             session.add(
                 Chat(

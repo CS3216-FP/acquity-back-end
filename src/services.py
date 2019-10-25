@@ -455,6 +455,7 @@ class BannedPairService(DefaultService):
                 ]
             )
 
+
 def chat_serializer(chat_room_result, chat_result, buyer, seller, user_id):
     (author, dealer) = (
         (seller, buyer) if seller.get("id") == user_id else (buyer, seller)
@@ -469,6 +470,7 @@ def chat_serializer(chat_room_result, chat_result, buyer, seller, user_id):
         "message": chat_result.get("message"),
         "chatRoomId": chat_room_result.get("id"),
     }
+
 
 class ChatService(DefaultService):
     def __init__(
@@ -502,13 +504,12 @@ class ChatService(DefaultService):
                 .all()[0]
             )
             return chat_serializer(
-                result[0].asdict(), 
-                chat, 
-                result[1].asdict(), 
+                result[0].asdict(),
+                chat,
+                result[1].asdict(),
                 result[2].asdict(),
-                user_id=author_id
+                user_id=author_id,
             )
-            
 
     def get_conversation(self, user_id, chat_room_id):
         with session_scope() as session:
@@ -525,11 +526,11 @@ class ChatService(DefaultService):
             for result in results:
                 data.append(
                     chat_serializer(
-                        result[0].asdict(), 
-                        result[1].asdict(), 
-                        result[2].asdict(), 
+                        result[0].asdict(),
+                        result[1].asdict(),
+                        result[2].asdict(),
                         result[3].asdict(),
-                        user_id=user_id
+                        user_id=user_id,
                     )
                 )
             return sorted(data, key=lambda item: item["createdAt"])
@@ -594,11 +595,11 @@ class ChatRoomService(DefaultService):
             for result in results:
                 data.append(
                     chat_serializer(
-                        result[1].asdict(), 
-                        result[0].asdict(), 
-                        result[2].asdict(), 
+                        result[1].asdict(),
+                        result[0].asdict(),
+                        result[2].asdict(),
                         result[3].asdict(),
-                        user_id=user_id
+                        user_id=user_id,
                     )
                 )
         return sorted(data, key=lambda item: item["createdAt"], reverse=True)
