@@ -616,7 +616,7 @@ class ChatRoomService(DefaultService):
                     )
                 )
         return sorted(data, key=lambda item: item["created_at"], reverse=True)
-        
+
 
 class SocialLogin(DefaultService):
     def __init__(self, config, sio, UserService=UserService):
@@ -679,4 +679,3 @@ class SocialLogin(DefaultService):
             headers={"Authorization": f"Bearer {token}"},
         ).json()
         return email.get("elements")[0].get("handle~").get("emailAddress")
-
