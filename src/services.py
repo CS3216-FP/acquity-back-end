@@ -318,7 +318,7 @@ class SecurityService:
             return [sec.asdict() for sec in session.query(Security).all()]
 
 
-class RoundService():
+class RoundService:
     def __init__(self, config):
         self.config = config
 
@@ -634,7 +634,7 @@ class ChatRoomService:
             return {k: user[k] for k in ["email", "full_name"]}
 
 
-class SocialLogin():
+class SocialLogin:
     def __init__(self, config, sio):
         self.config = config
         self.sio = sio
