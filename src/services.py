@@ -372,7 +372,7 @@ class RoundService:
             for buy_order in session.query(BuyOrder).filter_by(round_id=None):
                 buy_order.round_id = str(new_round.id)
 
-            emails = [user.email for user in session.query(self.User).all()]
+            emails = [user.email for user in session.query(User).all()]
             EmailService(self.config).send_email(
                 bcc_list=emails, template="round_opened"
             )
