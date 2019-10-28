@@ -1,5 +1,4 @@
 from datetime import datetime, timezone
-from json import dumps
 from operator import itemgetter
 from urllib.parse import quote
 
