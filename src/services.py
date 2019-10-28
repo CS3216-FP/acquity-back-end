@@ -1,8 +1,8 @@
 from datetime import datetime, timezone
+from json import dumps
 from operator import itemgetter
 from urllib.parse import quote
 
-from json import dumps
 import requests
 from passlib.hash import argon2
 from sqlalchemy import and_, asc, desc, funcfilter, or_
