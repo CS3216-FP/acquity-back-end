@@ -2,6 +2,7 @@ from datetime import datetime, timezone
 from operator import itemgetter
 from urllib.parse import quote
 
+from json import dumps
 import requests
 from passlib.hash import argon2
 from sqlalchemy import and_, asc, desc, funcfilter, or_
@@ -79,8 +80,6 @@ class UserService(DefaultService):
             session.commit()
             result = user.asdict()
         result.pop("hashed_password")
-        result.pop("created_at")
-        result.pop("updated_at")
         return result
 
     @validate_input(INVITE_SCHEMA)
@@ -645,6 +644,8 @@ class SocialLogin(DefaultService):
         user = self.UserService(self.config).activate_buy_privileges(
             user_id=user.get("id")
         )
+        user["created_at"] = user.get("created_at").timestamp()
+        user["updated_at"] = user.get("updated_at").timestamp()
         await self.sio.emit("provider", user, namespace="/v1/", room=socket_id)
         self.sio.leave_room(socket_id, "linkedin")
 
