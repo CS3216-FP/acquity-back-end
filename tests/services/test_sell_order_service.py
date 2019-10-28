@@ -102,11 +102,7 @@ def test_create_order__add_new_round():
         "src.services.RoundService.should_round_start", return_value=True
     ), patch("src.services.EmailService.send_email") as mock:
         sell_order_id2 = sell_order_service.create_order(**sell_order_params)["id"]
-        mock.assert_called_once_with(
-            bcc_list=[user["email"]],
-            subject="Round has opened",
-            text="Place your bids/offers!",
-        )
+        mock.assert_called_once_with(bcc_list=[user["email"]], template="round_opened")
 
     with session_scope() as session:
         sell_order = session.query(SellOrder).get(sell_order_id).asdict()

@@ -55,13 +55,11 @@ def test_run_matches():
             [
                 call(
                     [buy_user["email"], sell_user["email"]],
-                    subject="You got a match!",
-                    text="Open Acquity to check your matches.",
+                    template="match_done_has_match",
                 ),
                 call(
                     [buy_user2["email"], sell_user2["email"]],
-                    subject="No match!",
-                    text="Your price might be too high/low! Try again.",
+                    template="match_done_no_match",
                 ),
             ]
         )

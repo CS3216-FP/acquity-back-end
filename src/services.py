@@ -397,9 +397,7 @@ class RoundService(DefaultService):
 
             emails = [user.email for user in session.query(self.User).all()]
             EmailService(self.config).send_email(
-                bcc_list=emails,
-                subject="Round has opened",
-                text="Place your bids/offers!",
+                bcc_list=emails, template="round_opened"
             )
 
 
@@ -502,9 +500,7 @@ class MatchService(DefaultService):
                 .all()
             ]
             EmailService(self.config).send_email(
-                matched_emails,
-                subject="You got a match!",
-                text="Open Acquity to check your matches.",
+                matched_emails, template="match_done_has_match"
             )
 
             unmatched_emails = [
@@ -514,9 +510,7 @@ class MatchService(DefaultService):
                 .all()
             ]
             EmailService(self.config).send_email(
-                unmatched_emails,
-                subject="No match!",
-                text="Your price might be too high/low! Try again.",
+                unmatched_emails, template="match_done_no_match"
             )
 
 
