@@ -422,7 +422,23 @@ class MatchService(DefaultService):
 
     def run_matches(self):
         round_id = RoundService(self.config).get_active()["id"]
+        buy_orders, sell_orders, banned_pairs = self._get_matching_params(round_id)
 
+        match_results = match_buyers_and_sellers(buy_orders, sell_orders, banned_pairs)
+
+        buy_order_to_buyer_dict = {
+            order["id"]: order["user_id"] for order in buy_orders
+        }
+        sell_order_to_seller_dict = {
+            order["id"]: order["user_id"] for order in sell_orders
+        }
+
+        self._add_db_objects(
+            round_id, match_results, sell_order_to_seller_dict, buy_order_to_buyer_dict
+        )
+        self._send_emails(buy_orders, sell_orders, match_results)
+
+    def _get_matching_params(self, round_id):
         with session_scope() as session:
             buy_orders = [
                 b.asdict()
@@ -439,15 +455,15 @@ class MatchService(DefaultService):
                 for bp in session.query(self.BannedPair).all()
             ]
 
-        match_results = match_buyers_and_sellers(buy_orders, sell_orders, banned_pairs)
+        return buy_orders, sell_orders, banned_pairs
 
-        buy_order_to_buyer_dict = {
-            order["id"]: order["user_id"] for order in buy_orders
-        }
-        sell_order_to_seller_dict = {
-            order["id"]: order["user_id"] for order in sell_orders
-        }
-
+    def _add_db_objects(
+        self,
+        round_id,
+        match_results,
+        sell_order_to_seller_dict,
+        buy_order_to_buyer_dict,
+    ):
         with session_scope() as session:
             for buy_order_id, sell_order_id in match_results:
                 match = self.Match(
@@ -460,6 +476,48 @@ class MatchService(DefaultService):
                 session.add_all([match, chat_room])
 
             session.query(Round).get(round_id).is_concluded = True
+
+    def _send_emails(self, buy_orders, sell_orders, match_results):
+        matched_uuids = set()
+        for buy_order_uuid, sell_order_uuid in match_results:
+            matched_uuids.add(buy_order_uuid)
+            matched_uuids.add(sell_order_uuid)
+
+        all_user_ids = set()
+        matched_user_ids = set()
+        for buy_order in buy_orders:
+            all_user_ids.add(buy_order["user_id"])
+            if buy_order["id"] in matched_uuids:
+                matched_user_ids.add(buy_order["user_id"])
+        for sell_order in sell_orders:
+            all_user_ids.add(sell_order["user_id"])
+            if sell_order["id"] in matched_uuids:
+                matched_user_ids.add(sell_order["user_id"])
+
+        with session_scope() as session:
+            matched_emails = [
+                user.email
+                for user in session.query(User)
+                .filter(User.id.in_(matched_user_ids))
+                .all()
+            ]
+            EmailService(self.config).send_email(
+                matched_emails,
+                subject="You got a match!",
+                text="Open Acquity to check your matches.",
+            )
+
+            unmatched_emails = [
+                user.email
+                for user in session.query(User)
+                .filter(User.id.in_(all_user_ids - matched_user_ids))
+                .all()
+            ]
+            EmailService(self.config).send_email(
+                unmatched_emails,
+                subject="No match!",
+                text="Your price might be too high/low! Try again.",
+            )
 
 
 class BannedPairService(DefaultService):
