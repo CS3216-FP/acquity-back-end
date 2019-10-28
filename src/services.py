@@ -21,6 +21,7 @@ from src.database import (
     User,
     session_scope,
 )
+from src.email import EmailService
 from src.exceptions import (
     ResourceNotFoundException,
     ResourceNotOwnedException,
@@ -186,7 +187,7 @@ class SellOrderService(DefaultService):
                 session.add(sell_order)
                 session.commit()
                 if RoundService(self.config).should_round_start():
-                    RoundService(self.config).set_orders_to_new_round()
+                    RoundService(self.config).create_new_round_and_set_orders()
             else:
                 sell_order.round_id = active_round["id"]
                 session.add(sell_order)
@@ -332,11 +333,14 @@ class SecurityService(DefaultService):
 
 
 class RoundService(DefaultService):
-    def __init__(self, config, Round=Round, SellOrder=SellOrder, BuyOrder=BuyOrder):
+    def __init__(
+        self, config, Round=Round, SellOrder=SellOrder, BuyOrder=BuyOrder, User=User
+    ):
         super().__init__(config)
         self.Round = Round
         self.SellOrder = SellOrder
         self.BuyOrder = BuyOrder
+        self.User = User
 
     def get_all(self):
         with session_scope() as session:
@@ -379,7 +383,7 @@ class RoundService(DefaultService):
                 >= self.config["ACQUITY_ROUND_START_TOTAL_SELL_SHARES_CUTOFF"]
             )
 
-    def set_orders_to_new_round(self):
+    def create_new_round_and_set_orders(self):
         with session_scope() as session:
             end_time = datetime.now(timezone.utc) + self.config["ACQUITY_ROUND_LENGTH"]
             new_round = self.Round(end_time=end_time, is_concluded=False)
@@ -390,6 +394,13 @@ class RoundService(DefaultService):
                 sell_order.round_id = str(new_round.id)
             for buy_order in session.query(self.BuyOrder).filter_by(round_id=None):
                 buy_order.round_id = str(new_round.id)
+
+            emails = [user.email for user in session.query(self.User).all()]
+            EmailService(self.config).send_email(
+                bcc_list=emails,
+                subject="Round has opened",
+                text="Place your bids/offers!",
+            )
 
 
 class MatchService(DefaultService):
