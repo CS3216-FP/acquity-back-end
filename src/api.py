@@ -93,7 +93,7 @@ async def edit_sell_order(request, user, id):
 async def delete_sell_order(request, user, id):
     return json(
         request.app.sell_order_service.delete_order(
-            **request.json, id=id, subject_id=user["id"]
+            id=id, subject_id=user["id"]
         )
     )
 
@@ -137,7 +137,7 @@ async def edit_buy_order(request, user, id):
 async def delete_buy_order(request, user, id):
     return json(
         request.app.buy_order_service.delete_order(
-            **request.json, id=id, subject_id=user["id"]
+            id=id, subject_id=user["id"]
         )
     )
 
