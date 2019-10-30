@@ -1,5 +1,6 @@
 import traceback
 
+import sentry_sdk
 import socketio
 from sanic import Sanic
 from sanic.exceptions import SanicException
@@ -7,11 +8,14 @@ from sanic.response import json
 from sanic_cors.extension import CORS as initialize_cors
 from sanic_jwt import Initialize as initialize_jwt
 from sanic_jwt import Responses
+from sentry_sdk.integrations.sanic import SanicIntegration
+from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 
 from src.api import blueprint, user_login
 from src.chat_service import ChatSocketService
 from src.config import APP_CONFIG
 from src.exceptions import AcquityException
+from src.scheduler import scheduler
 from src.services import (
     BannedPairService,
     BuyOrderService,
@@ -23,6 +27,21 @@ from src.services import (
     SellOrderService,
     SocialLogin,
     UserService,
+)
+
+
+def sentry_before_send(event, hint):
+    if "exc_info" in hint:
+        _exc_type, exc_value, _tb = hint["exc_info"]
+        if isinstance(exc_value, AcquityException):
+            return None
+    return event
+
+
+sentry_sdk.init(
+    dsn="https://1d45f7681dca45e8b8a83842dd6303b8@sentry.io/1800796",
+    integrations=[SanicIntegration(), SqlalchemyIntegration()],
+    before_send=sentry_before_send,
 )
 
 app = Sanic(load_env=False)
@@ -81,6 +100,13 @@ async def error_handler(request, exception):
 
 
 app.error_handler.add(Exception, error_handler)
+
+
+@app.listener("after_server_start")
+async def start_scheduler(app, loop):
+    scheduler.configure(event_loop=loop)
+    app.scheduler = scheduler
+    scheduler.start()
 
 
 if __name__ == "__main__":

@@ -1,3 +1,4 @@
+from collections import defaultdict
 from datetime import datetime, timezone
 from operator import itemgetter
 from urllib.parse import quote
@@ -30,7 +31,8 @@ from src.exceptions import (
 )
 from src.match import match_buyers_and_sellers
 from src.schemata import (
-    CREATE_ORDER_SCHEMA,
+    CREATE_BUY_ORDER_SCHEMA,
+    CREATE_SELL_ORDER_SCHEMA,
     CREATE_USER_SCHEMA,
     DELETE_ORDER_SCHEMA,
     EDIT_MARKET_PRICE_SCHEMA,
@@ -141,14 +143,12 @@ class SellOrderService:
     def __init__(self, config):
         self.config = config
 
-    @validate_input(CREATE_ORDER_SCHEMA)
-    def create_order(self, user_id, number_of_shares, price, security_id):
+    @validate_input(CREATE_SELL_ORDER_SCHEMA)
+    def create_order(self, user_id, number_of_shares, price, security_id, scheduler):
         with session_scope() as session:
             user = session.query(User).get(user_id)
             if user is None:
                 raise ResourceNotFoundException()
-            if not user.can_sell:
-                raise UnauthorizedException("This user cannot sell securities.")
 
             sell_order_count = (
                 session.query(SellOrder).filter_by(user_id=user_id).count()
@@ -168,7 +168,7 @@ class SellOrderService:
                 session.add(sell_order)
                 session.commit()
                 if RoundService(self.config).should_round_start():
-                    RoundService(self.config).create_new_round_and_set_orders()
+                    RoundService(self.config).create_new_round_and_set_orders(scheduler)
             else:
                 sell_order.round_id = active_round["id"]
                 session.add(sell_order)
@@ -226,14 +226,12 @@ class BuyOrderService:
     def __init__(self, config):
         self.config = config
 
-    @validate_input(CREATE_ORDER_SCHEMA)
+    @validate_input(CREATE_BUY_ORDER_SCHEMA)
     def create_order(self, user_id, number_of_shares, price, security_id):
         with session_scope() as session:
             user = session.query(User).get(user_id)
             if user is None:
                 raise ResourceNotFoundException()
-            if not user.can_buy:
-                raise UnauthorizedException("This user cannot buy securities.")
 
             buy_order_count = session.query(BuyOrder).filter_by(user_id=user_id).count()
             if buy_order_count >= self.config["ACQUITY_BUY_ORDER_PER_ROUND_LIMIT"]:
@@ -367,7 +365,7 @@ class RoundService:
                 >= self.config["ACQUITY_ROUND_START_TOTAL_SELL_SHARES_CUTOFF"]
             )
 
-    def create_new_round_and_set_orders(self):
+    def create_new_round_and_set_orders(self, scheduler):
         with session_scope() as session:
             end_time = datetime.now(timezone.utc) + self.config["ACQUITY_ROUND_LENGTH"]
             new_round = Round(end_time=end_time, is_concluded=False)
@@ -380,9 +378,16 @@ class RoundService:
                 buy_order.round_id = str(new_round.id)
 
             emails = [user.email for user in session.query(User).all()]
-            EmailService(self.config).send_email(
-                bcc_list=emails, template="round_opened"
+            EmailService(self.config).send_email(emails, template="round_opened")
+
+        if scheduler is not None:
+            scheduler.add_job(
+                MatchService(self.config).run_matches, "date", run_date=end_time
             )
+
+    @validate_input({"security_id": UUID_RULE})
+    def get_previous_round_statistics(self, security_id):
+        return None
 
 
 class MatchService:
@@ -411,17 +416,36 @@ class MatchService:
         with session_scope() as session:
             buy_orders = [
                 b.asdict()
-                for b in session.query(BuyOrder).filter_by(round_id=round_id).all()
+                for b in session.query(BuyOrder)
+                .join(User, User.id == BuyOrder.user_id)
+                .filter(BuyOrder.round_id == round_id, User.can_buy)
+                .all()
             ]
             sell_orders = [
                 s.asdict()
-                for s in session.query(SellOrder).filter_by(round_id=round_id).all()
+                for s in session.query(SellOrder)
+                .join(User, User.id == SellOrder.user_id)
+                .filter(SellOrder.round_id == round_id, User.can_sell)
+                .all()
             ]
             banned_pairs = [
                 (bp.buyer_id, bp.seller_id) for bp in session.query(BannedPair).all()
             ]
 
-        return buy_orders, sell_orders, banned_pairs
+        return buy_orders, self._double_sell_orders(sell_orders), banned_pairs
+
+    def _double_sell_orders(self, sell_orders):
+        seller_counts = defaultdict(lambda: 0)
+        for sell_order in sell_orders:
+            seller_counts[sell_order["user_id"]] += 1
+
+        new_sell_orders = []
+        for sell_order in sell_orders:
+            new_sell_orders.append(sell_order)
+            if seller_counts[sell_order["user_id"]] == 1:
+                new_sell_orders.append(sell_order)
+
+        return new_sell_orders
 
     def _add_db_objects(
         self,

@@ -101,7 +101,9 @@ async def get_sell_order_by_id(request, user, id):
 @expects_json_object
 async def create_sell_order(request, user):
     return json(
-        request.app.sell_order_service.create_order(**request.json, user_id=user["id"])
+        request.app.sell_order_service.create_order(
+            **request.json, user_id=user["id"], scheduler=request.app.scheduler
+        )
     )
 
 
@@ -187,6 +189,13 @@ async def get_all_rounds(request):
 @blueprint.get("/round/active")
 async def get_active_round(request):
     return json(request.app.round_service.get_active())
+
+
+@blueprint.get("/round/previous/statistics/<security_id>")
+async def get_active_round(request, security_id):
+    return json(
+        request.app.round_service.get_previous_round_statistics(security_id=security_id)
+    )
 
 
 @blueprint.post("/ban/")
