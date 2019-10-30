@@ -30,7 +30,7 @@ app.config.update(APP_CONFIG)
 
 sio = socketio.AsyncServer(async_mode="sanic", cors_allowed_origins=[])
 sio.attach(app)
-sio.register_namespace(ChatSocketService("/v1/chat", app.config))
+sio.register_namespace(ChatSocketService("/v1/chat", app.config, sio))
 
 app.user_service = UserService(app.config)
 app.sell_order_service = SellOrderService(app.config)
@@ -62,21 +62,6 @@ class AcquityJwtResponses(Responses):
         )
         return json({"error": reasons}, status=exception.status_code)
 
-
-async def retrieve_user(request, payload, *args, **kwargs):
-    if payload is not None:
-        return request.app.user_service.get_user(id=payload.get("id"))
-    else:
-        return None
-
-
-initialize_jwt(
-    blueprint,
-    app=app,
-    authenticate=user_login,
-    responses_class=AcquityJwtResponses,
-    retrieve_user=retrieve_user,
-)
 
 app.blueprint(blueprint)
 

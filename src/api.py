@@ -1,6 +1,7 @@
+from functools import wraps
+
 from sanic import Blueprint, response
 from sanic.response import json
-from sanic_jwt.decorators import inject_user, protected
 from sanic_jwt.exceptions import AuthenticationFailed
 
 from src.utils import expects_json_object
@@ -8,8 +9,34 @@ from src.utils import expects_json_object
 blueprint = Blueprint("root", version="v1")
 
 
-def auth_required(func):
-    return (inject_user(blueprint))(protected(blueprint)(func))
+def auth_required(f):
+    @wraps(f)
+    async def decorated_function(request, *args, **kwargs):
+        def get_token(header):
+            PREFIX = "Bearer "
+            if not header.startswith(PREFIX):
+                raise ValueError("Invalid token")
+            return header[len(PREFIX) :]
+
+        token = get_token(request.headers["Authorization"])
+        linkedin_user = request.app.social_login.get_linkedin_user(token=token)
+        user = request.app.user_service.get_user_by_linkedin_id(
+            user_id=linkedin_user.get("user_id")
+        )
+        if user is not None:
+            response = await f(request, user, *args, **kwargs)
+            return response
+        else:
+            return json({"status": "not_authorized"}, 403)
+
+    return decorated_function
+
+
+@blueprint.get("/auth/me")
+@auth_required
+async def test(request, user):
+    user = request.app.user_service.get_user_by_linkedin_id(user_id=user.get("user_id"))
+    return json({"me": user})
 
 
 @blueprint.get("/")
@@ -26,6 +53,7 @@ async def create_user(request):
 
 @expects_json_object
 async def user_login(request):
+    print(request)
     user = request.app.user_service.authenticate(**request.json)
     if user is None:
         raise AuthenticationFailed()
