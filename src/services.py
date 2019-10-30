@@ -845,8 +845,8 @@ class ChatRoomService:
         with session_scope() as session:
             chat_room = session.query(ChatRoom).get(chat_room_id).asdict()
 
-        if not chat_room["is_revealed"]:
-            raise ResourceNotOwnedException("Other party has not revealed.")
+        if not (chat_room["is_buyer_revealed"] and chat_room["is_seller_revealed"]):
+            raise ResourceNotOwnedException("Both parties have not revealed their information.")
 
         if chat_room["seller_id"] == user_id:
             other_party_user_id = chat_room["buyer_id"]
