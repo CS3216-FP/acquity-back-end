@@ -65,7 +65,6 @@ class UserService:
             session.commit()
 
             result = user.asdict()
-        result.pop("hashed_password")
         return result
 
     @validate_input({"user_id": UUID_RULE})
@@ -78,7 +77,6 @@ class UserService:
             user.can_buy = True
             session.commit()
             result = user.asdict()
-        result.pop("hashed_password")
         return result
 
     @validate_input(INVITE_SCHEMA)
@@ -96,7 +94,6 @@ class UserService:
             session.commit()
 
             result = invited.asdict()
-        result.pop("hashed_password")
         return result
 
     @validate_input(INVITE_SCHEMA)
@@ -114,7 +111,6 @@ class UserService:
             session.commit()
 
             result = invited.asdict()
-        result.pop("hashed_password")
         return result
 
     @validate_input(USER_AUTH_SCHEMA)
@@ -137,7 +133,6 @@ class UserService:
             if user is None:
                 raise NoResultFound
             user_dict = user.asdict()
-        user_dict.pop("hashed_password")
         return user_dict
 
     def get_user_by_email(self, email):
@@ -148,7 +143,6 @@ class UserService:
             if user is None:
                 raise NoResultFound
             user_dict = user.asdict()
-        user_dict.pop("hashed_password")
         return user_dict
 
 

@@ -72,7 +72,44 @@ class User(Base):
     bans_as_seller = relationship(
         "BannedPair", back_populates="seller", foreign_keys="[BannedPair.seller_id]"
     )
-    requests = relationship("Request", back_populates="user")
+
+    def asdict(self):
+        d = {}
+        columns = self.__table__.columns.keys()
+
+        for col in columns:
+            if col == "hashed_password":
+                continue
+
+            if col in ["can_buy", "can_sell"]:
+                with session_scope() as session:
+                    req = session.query(UserRequest).filter_by(user_id=str(self.id))
+
+                    if col == "can_buy":
+                        req = req.filter_by(is_buy=True)
+                    elif col == "can_sell":
+                        req = req.filter_by(is_buy=False)
+
+                    if req.count() > 0:
+                        item = "UNAPPROVED"
+                    elif getattr(self, col):
+                        item = "YES"
+                    else:
+                        item = "NO"
+
+                d[col] = item
+
+            item = getattr(self, col)
+
+            if isinstance(item, uuid.UUID):
+                d[col] = str(item)
+            else:
+                d[col] = item
+
+        for key, value in self.additional_things_to_dict.items():
+            d[key] = value
+
+        return d
 
 
 class Security(Base):
@@ -184,8 +221,6 @@ class UserRequest(Base):
 
     user_id = Column(UUID, ForeignKey("users.id"), nullable=False)
     is_buy = Column(Boolean, nullable=False)
-
-    user = relationship("User", back_populates="requests")
 
 
 engine = create_engine(APP_CONFIG["DATABASE_URL"])
