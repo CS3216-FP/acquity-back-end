@@ -26,7 +26,7 @@ def attributes_for_user(id="", **kwargs):
         "email": f"a{id}@a",
         "user_id": f"abcdef{id}",
         "full_name": f"a{id}",
-        "display_image": "https://loremflickr.com/320/240",
+        "display_image_url": "https://loremflickr.com/320/240",
         "can_buy": True,
         "can_sell": True,
         "is_committee": True,

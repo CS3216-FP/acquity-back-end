@@ -2,8 +2,8 @@ from functools import wraps
 
 from sanic import Blueprint, response
 from sanic.response import json
-from sanic_jwt.exceptions import AuthenticationFailed
 
+from src.exceptions import AcquityException
 from src.utils import expects_json_object
 
 blueprint = Blueprint("root", version="v1")
@@ -12,14 +12,12 @@ blueprint = Blueprint("root", version="v1")
 def auth_required(f):
     @wraps(f)
     async def decorated_function(request, *args, **kwargs):
-        def get_token(header):
-            PREFIX = "Bearer "
-            if not header.startswith(PREFIX):
-                raise ValueError("Invalid token")
-            return header[len(PREFIX) :]
-
-        token = get_token(request.headers["Authorization"])
-        linkedin_user = request.app.social_login.get_linkedin_user(token=token)
+        PREFIX = "Bearer "
+        header = request.headers["Authorization"]
+        if not header.startswith(PREFIX):
+            raise ValueError("Invalid Token")
+        token = header[len(PREFIX) :]
+        linkedin_user = request.app.linkedin_login.get_linkedin_user(token=token)
         user = request.app.user_service.get_user_by_linkedin_id(
             user_id=linkedin_user.get("user_id")
         )
@@ -34,7 +32,7 @@ def auth_required(f):
 
 @blueprint.get("/auth/me")
 @auth_required
-async def test(request, user):
+async def user_info(request, user):
     user = request.app.user_service.get_user_by_linkedin_id(user_id=user.get("user_id"))
     return json({"me": user})
 
@@ -47,13 +45,12 @@ async def root(request):
 @blueprint.post("/user/")
 @expects_json_object
 async def create_user(request):
-    user = request.app.user_service.create(**request.json)
+    user = request.app.user_service.create_if_not_exists(**request.json)
     return json(user)
 
 
 @expects_json_object
 async def user_login(request):
-    print(request)
     user = request.app.user_service.authenticate(**request.json)
     if user is None:
         raise AuthenticationFailed()
@@ -210,7 +207,7 @@ async def ban_user(request, user):
 @blueprint.get("/linkedin/auth")
 async def linkedin_auth(request):
     socket_id = request.args.get("socketId")
-    url = request.app.social_login.get_auth_url(socket_id)
+    url = request.app.linkedin_login.get_auth_url(socket_id)
     return response.redirect(url)
 
 
@@ -218,5 +215,5 @@ async def linkedin_auth(request):
 async def linkedin_auth(request):
     code = request.args.get("code")
     state = request.args.get("state")
-    await request.app.social_login.authenticate(code=code, socket_id=state)
+    await request.app.linkedin_login.authenticate(code=code, socket_id=state)
     return json({"data": "success"})

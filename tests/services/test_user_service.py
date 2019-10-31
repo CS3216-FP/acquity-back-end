@@ -13,7 +13,9 @@ user_service = UserService(config=APP_CONFIG, hasher=plaintext)
 
 
 def test_create():
-    user_service.create(email="a@a", user_id="123456", full_name="Ben", display_image=None)
+    user_service.create_if_not_exists(
+        email="a@a", user_id="123456", full_name="Ben", display_image_url=None
+    )
 
     with session_scope() as session:
         users = [u.asdict() for u in session.query(User).all()]
@@ -29,7 +31,6 @@ def test_create():
         },
         users[0],
     )
-
 
 
 def test_invite_to_be_seller__unauthorized():

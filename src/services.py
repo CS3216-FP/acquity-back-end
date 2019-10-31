@@ -3,7 +3,6 @@ from datetime import datetime, timezone
 from operator import itemgetter
 from urllib.parse import quote
 
-import jwt
 import requests
 from passlib.hash import argon2
 from sqlalchemy import and_, asc, desc, funcfilter, or_
@@ -49,14 +48,14 @@ class UserService:
         self.config = config
         self.hasher = hasher
 
-    def create(self, email, display_image, full_name, user_id):
+    def create_if_not_exists(self, email, display_image_url, full_name, user_id):
         with session_scope() as session:
             user = session.query(User).filter_by(user_id=user_id).one_or_none()
             if user is None:
                 user = User(
                     email=email,
                     full_name=full_name,
-                    display_image=display_image,
+                    display_image_url=display_image_url,
                     provider="linkedin",
                     can_buy=False,
                     can_sell=False,
@@ -64,7 +63,7 @@ class UserService:
                 )
                 session.add(user)
             else:
-                user.display_image = display_image
+                user.display_image_url = display_image_url
                 user.full_name = full_name
                 session.flush()
                 return user.asdict()
@@ -123,8 +122,6 @@ class UserService:
             user = session.query(User).get(id)
             if user is None:
                 raise ResourceNotFoundException()
-            if user is None:
-                raise NoResultFound
             user_dict = user.asdict()
         return user_dict
 
@@ -133,8 +130,6 @@ class UserService:
             user = session.query(User).filter_by(user_id=user_id).one_or_none()
             if user is None:
                 raise ResourceNotFoundException()
-            if user is None:
-                raise NoResultFound
             user_dict = user.asdict()
         return user_dict
 
@@ -665,7 +660,7 @@ class ChatRoomService:
             return {k: user[k] for k in ["email", "full_name"]}
 
 
-class SocialLogin:
+class LinkedInLogin:
     def __init__(self, config, sio, UserService=UserService):
         self.config = config
         self.sio = sio
@@ -677,7 +672,7 @@ class SocialLogin:
         client_id = self.config.get("CLIENT_ID")
         response_type = "code"
         redirect_uri = f"{host}/v1/linkedin/auth/callback"
-        scope = "r_liteprofile%20r_emailaddress%20w_member_social"
+        scope = "r_liteprofile%20r_emailaddress%20w_member_social%20r_basicprofile"
         url = f"https://www.linkedin.com/oauth/v2/authorization?response_type={response_type}&client_id={client_id}&redirect_uri={redirect_uri}&scope={scope}&state={socket_id}"
         return url
 
@@ -692,12 +687,7 @@ class SocialLogin:
     async def authenticate(self, code, socket_id):
         token = self.get_token(code=code)
         user = self.get_linkedin_user(token)
-        user = self.UserService(self.config).create(
-            full_name=user.get("full_name"),
-            email=user.get("email"),
-            display_image=user.get("display_image"),
-            user_id=user.get("user_id"),
-        )
+        self.UserService(self.config).create_if_not_exists(**user)
         await self.sio.emit(
             "provider", {"access_token": token}, namespace="/v1/", room=socket_id
         )
@@ -728,7 +718,7 @@ class SocialLogin:
         first_name = user_profile.get("firstName").get("localized").get("en_US")
         last_name = user_profile.get("lastName").get("localized").get("en_US")
         try:
-            display_image = (
+            display_image_url = (
                 user_profile.get("profilePicture")
                 .get("displayImage~")
                 .get("elements")[-1]
@@ -736,11 +726,11 @@ class SocialLogin:
                 .get("identifier")
             )
         except AttributeError:
-            display_image = None
+            display_image_url = None
 
         return {
             "full_name": f"{first_name} {last_name}",
-            "display_image": display_image,
+            "display_image_url": display_image_url,
             "user_id": user_id,
         }
 

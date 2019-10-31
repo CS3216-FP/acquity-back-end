@@ -1,7 +1,6 @@
-import jwt
 import socketio
 
-from src.services import ChatRoomService, ChatService, SocialLogin, UserService
+from src.services import ChatRoomService, ChatService, LinkedInLogin, UserService
 
 
 class ChatSocketService(socketio.AsyncNamespace):
@@ -9,12 +8,12 @@ class ChatSocketService(socketio.AsyncNamespace):
         super().__init__(namespace)
         self.chat_service = ChatService(config)
         self.chat_room_service = ChatRoomService(config)
-        self.social_login = SocialLogin(config, sio)
+        self.linkedin_login = LinkedInLogin(config, sio)
         self.user_service = UserService(config)
         self.config = config
 
     async def authenticate(self, token):
-        linkedin_user = self.social_login.get_user_profile(token=token)
+        linkedin_user = self.linkedin_login.get_user_profile(token=token)
         user = self.user_service.get_user_by_linkedin_id(
             user_id=linkedin_user.get("user_id")
         )

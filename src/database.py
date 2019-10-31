@@ -60,7 +60,7 @@ class User(Base):
     email = Column(String, nullable=False, unique=True)
     provider = Column(String, nullable=False)
     full_name = Column(String, nullable=False)
-    display_image = Column(String)
+    display_image_url = Column(String)
     can_buy = Column(Boolean, nullable=False, server_default="t")
     can_sell = Column(Boolean, nullable=False, server_default="t")
     is_committee = Column(Boolean, nullable=False, server_default="t")

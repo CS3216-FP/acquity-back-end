@@ -6,8 +6,6 @@ from sanic import Sanic
 from sanic.exceptions import SanicException
 from sanic.response import json
 from sanic_cors.extension import CORS as initialize_cors
-from sanic_jwt import Initialize as initialize_jwt
-from sanic_jwt import Responses
 from sentry_sdk.integrations.sanic import SanicIntegration
 from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 
@@ -21,11 +19,11 @@ from src.services import (
     BuyOrderService,
     ChatRoomService,
     ChatService,
+    LinkedInLogin,
     MatchService,
     RoundService,
     SecurityService,
     SellOrderService,
-    SocialLogin,
     UserService,
 )
 
@@ -60,12 +58,12 @@ app.match_service = MatchService(app.config)
 app.banned_pair_service = BannedPairService(app.config)
 app.chat_room_service = ChatRoomService(app.config)
 app.chat_service = ChatService(app.config)
-app.social_login = SocialLogin(app.config, sio)
+app.linkedin_login = LinkedInLogin(app.config, sio)
 
 initialize_cors(app)
 
 
-class AcquityJwtResponses(Responses):
+class AcquityJwtResponses:
     @staticmethod
     def exception_response(request, exception):
         if exception.args[0] == "Auth required.":
