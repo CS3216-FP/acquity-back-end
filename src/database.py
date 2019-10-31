@@ -72,6 +72,7 @@ class User(Base):
     bans_as_seller = relationship(
         "BannedPair", back_populates="seller", foreign_keys="[BannedPair.seller_id]"
     )
+    requests = relationship("Request", back_populates="user")
 
 
 class Security(Base):
@@ -176,6 +177,15 @@ class Chat(Base):
     chat_room_id = Column(UUID, ForeignKey("chat_rooms.id"), nullable=False)
     message = Column(Text, nullable=False)
     author_id = Column(UUID, ForeignKey("users.id"), nullable=False)
+
+
+class UserRequest(Base):
+    __tablename__ = "user_requests"
+
+    user_id = Column(UUID, ForeignKey("users.id"), nullable=False)
+    is_buy = Column(Boolean, nullable=False)
+
+    user = relationship("User", back_populates="requests")
 
 
 engine = create_engine(APP_CONFIG["DATABASE_URL"])
