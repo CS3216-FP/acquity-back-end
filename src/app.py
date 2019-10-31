@@ -63,23 +63,6 @@ app.linkedin_login = LinkedInLogin(app.config, sio)
 initialize_cors(app)
 
 
-class AcquityJwtResponses:
-    @staticmethod
-    def exception_response(request, exception):
-        if exception.args[0] == "Auth required.":
-            # Let's throw 404 Not Found instead
-            return json(
-                {"error": [f"Requested URL {request.path} not found"]}, status=404
-            )
-
-        reasons = (
-            exception.args[0]
-            if isinstance(exception.args[0], list)
-            else [exception.args[0]]
-        )
-        return json({"error": reasons}, status=exception.status_code)
-
-
 app.blueprint(blueprint)
 
 

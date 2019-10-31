@@ -15,7 +15,7 @@ def auth_required(f):
         PREFIX = "Bearer "
         header = request.headers["Authorization"]
         if not header.startswith(PREFIX):
-            raise ValueError("Invalid Token")
+            raise AcquityException("Invalid Token", 400)
         token = header[len(PREFIX) :]
         linkedin_user = request.app.linkedin_login.get_linkedin_user(token=token)
         user = request.app.user_service.get_user_by_linkedin_id(
