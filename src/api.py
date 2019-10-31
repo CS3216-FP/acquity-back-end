@@ -25,7 +25,7 @@ def auth_required(f):
             response = await f(request, user, *args, **kwargs)
             return response
         else:
-            return json({"status": "not_authorized"}, 403)
+            return ResourceNotOwnedException("User not found")
 
     return decorated_function
 

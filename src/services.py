@@ -64,7 +64,6 @@ class UserService:
                 session.add(user)
             else:
                 user.display_image_url = display_image_url
-                user.full_name = full_name
                 session.flush()
                 return user.asdict()
 
@@ -661,10 +660,9 @@ class ChatRoomService:
 
 
 class LinkedInLogin:
-    def __init__(self, config, sio, UserService=UserService):
+    def __init__(self, config, sio):
         self.config = config
         self.sio = sio
-        self.UserService = UserService
 
     def get_auth_url(self, socket_id):
         self.join_room(socket_id)
@@ -687,7 +685,7 @@ class LinkedInLogin:
     async def authenticate(self, code, socket_id):
         token = self.get_token(code=code)
         user = self.get_linkedin_user(token)
-        self.UserService(self.config).create_if_not_exists(**user)
+        UserService(self.config).create_if_not_exists(**user)
         await self.sio.emit(
             "provider", {"access_token": token}, namespace="/v1/", room=socket_id
         )
