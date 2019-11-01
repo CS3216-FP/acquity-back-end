@@ -14,6 +14,8 @@ def auth_required(f):
     async def decorated_function(request, *args, **kwargs):
         PREFIX = "Bearer "
         header = request.headers["Authorization"]
+        if header is None:
+            raise InvalidAuthorizationTokenException("Invalid Authorization Bearer")
         if not header.startswith(PREFIX):
             raise InvalidAuthorizationTokenException("Invalid Authorization Bearer")
         token = header[len(PREFIX) :]
