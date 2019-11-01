@@ -25,12 +25,12 @@ from src.database import (
 )
 from src.email_service import EmailService
 from src.exceptions import (
+    InvalidAuthorizationTokenException,
     InvisibleUnauthorizedException,
     ResourceNotFoundException,
     ResourceNotOwnedException,
     UnauthorizedException,
     UserProfileNotFoundException,
-    InvalidAuthorizationTokenException,
 )
 from src.match import match_buyers_and_sellers
 from src.schemata import (
@@ -716,7 +716,7 @@ class LinkedInLogin:
                 "client_secret": self.config.get("CLIENT_SECRET"),
             },
         )
-        if (token_request.status_code == 401):
+        if token_request.status_code == 401:
             raise InvalidAuthorizationTokenException("Invalid Code")
         token_data = token_request.json()
         return token_data.get("access_token")

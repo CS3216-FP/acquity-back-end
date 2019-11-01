@@ -29,9 +29,11 @@ def auth_required(f):
 
     return decorated_function
 
+
 @blueprint.get("/")
 async def root(request):
     return json({"hello": "world"})
+
 
 @blueprint.post("/auth/login")
 async def user_login(request):
