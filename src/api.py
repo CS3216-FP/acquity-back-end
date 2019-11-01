@@ -29,17 +29,21 @@ def auth_required(f):
 
     return decorated_function
 
+@blueprint.get("/")
+async def root(request):
+    return json({"hello": "world"})
+
+@blueprint.post("/auth/login")
+async def user_login(request):
+    token = request.app.linkedin_login.get_token(**request.json)
+    return json({"accessToken": token})
+
 
 @blueprint.get("/auth/me")
 @auth_required
 async def user_info(request, user):
     user = request.app.user_service.get_user_by_linkedin_id(user_id=user.get("user_id"))
     return json({"me": user})
-
-
-@blueprint.get("/")
-async def root(request):
-    return json({"hello": "world"})
 
 
 @blueprint.post("/user/")

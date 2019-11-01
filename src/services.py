@@ -30,6 +30,7 @@ from src.exceptions import (
     ResourceNotOwnedException,
     UnauthorizedException,
     UserProfileNotFoundException,
+    InvalidAuthorizationTokenException,
 )
 from src.match import match_buyers_and_sellers
 from src.schemata import (
@@ -704,20 +705,21 @@ class LinkedInLogin:
             self.sio.leave_room(socket_id, "linkedin")
 
     def get_token(self, code):
-        host = self.config.get("HOST")
-        redirect_uri = f"{host}/v1/linkedin/auth/callback"
-        token = requests.post(
+        token_request = requests.post(
             "https://www.linkedin.com/oauth/v2/accessToken",
             headers={"Content-Type": "x-www-form-urlencoded"},
             params={
                 "grant_type": "authorization_code",
                 "code": code,
-                "redirect_uri": redirect_uri,
+                "redirect_uri": self.config.get("REDIRECT_URI"),
                 "client_id": self.config.get("CLIENT_ID"),
                 "client_secret": self.config.get("CLIENT_SECRET"),
             },
-        ).json()
-        return token.get("access_token")
+        )
+        if (token_request.status_code == 401):
+            raise InvalidAuthorizationTokenException("Invalid Code")
+        token_data = token_request.json()
+        return token_data.get("access_token")
 
     def get_user_profile(self, token):
         user_profile_request = requests.get(
