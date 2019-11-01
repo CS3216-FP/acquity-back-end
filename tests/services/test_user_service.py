@@ -14,19 +14,59 @@ user_service = UserService(config=APP_CONFIG, hasher=plaintext)
 
 def test_create():
     user_service.create_if_not_exists(
-        email="a@a.com", 
-        display_image_url=None, 
-        full_name="Ben", 
-        user_id="testing")
-        
+        email="a@a.io", display_image_url=None, full_name="Ben", user_id="testing"
+    )
+
     with session_scope() as session:
         user = session.query(User).one()
         user = user.asdict()
+        user.pop("created_at")
+        user.pop("updated_at")
 
     assert_dict_in(
-        {"email": "a@a.com", "full_name": "Ben", "can_buy": False, "can_sell": False, "user_id": "testing", provider:"linkedin"}, user
+        {
+            "email": "a@a.io",
+            "full_name": "Ben",
+            "can_buy": False,
+            "can_sell": False,
+            "user_id": "testing",
+            "provider": "linkedin",
+            "display_image_url": None,
+        },
+        user,
     )
-    
+
+
+def test_create_if_user_exist():
+    user_service.create_if_not_exists(
+        email="a@a.io", display_image_url=None, full_name="Ben", user_id="testing"
+    )
+
+    user_service.create_if_not_exists(
+        email="a@a.io",
+        display_image_url="https://test.png",
+        full_name="Ben",
+        user_id="testing",
+    )
+
+    with session_scope() as session:
+        user = session.query(User).one()
+        user = user.asdict()
+        user.pop("created_at")
+        user.pop("updated_at")
+
+    assert_dict_in(
+        {
+            "email": "a@a.io",
+            "full_name": "Ben",
+            "can_buy": False,
+            "can_sell": False,
+            "user_id": "testing",
+            "provider": "linkedin",
+            "display_image_url": "https://test.png",
+        },
+        user,
+    )
 
 
 def test_get_user_by_linkedin_id():
@@ -75,9 +115,7 @@ def test_invite_to_be_buyer__authorized():
 def test_get_user():
     user_params = create_user()
 
-    user_id = user_service.get_user_by_linkedin_id(user_id="abcdef")[
-        "id"
-    ]
+    user_id = user_service.get_user_by_linkedin_id(user_id="abcdef")["id"]
 
     user = user_service.get_user(id=user_id)
 

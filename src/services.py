@@ -64,12 +64,12 @@ class UserService:
                     user_id=user_id,
                 )
                 session.add(user)
+                session.flush()
+                result = user.asdict()
             else:
                 user.display_image_url = display_image_url
                 session.flush()
-                return user.asdict()
-
-            result = user.asdict()
+                result = user.asdict()
         return result
 
     @validate_input({"user_id": UUID_RULE})
