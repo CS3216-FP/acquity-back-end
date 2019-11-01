@@ -29,6 +29,8 @@ from src.exceptions import (
     ResourceNotFoundException,
     ResourceNotOwnedException,
     UnauthorizedException,
+    UserEmailNotFoundException,
+    UserProfileNotFoundException,
 )
 from src.match import match_buyers_and_sellers
 from src.schemata import (
@@ -692,7 +694,7 @@ class LinkedInLogin:
             await self.sio.emit(
                 "provider", {"access_token": token}, namespace="/v1/", room=socket_id
             )
-        except AttributeError:
+        except (UserEmailNotFoundException, UserProfileNotFoundException):
             await self.sio.emit(
                 "provider",
                 {"error": "request failed"},
@@ -722,10 +724,13 @@ class LinkedInLogin:
         user_profile = requests.get(
             "https://api.linkedin.com/v2/me?projection=(id,firstName,lastName,profilePicture(displayImage~:playableStreams))",
             headers={"Authorization": f"Bearer {token}"},
-        ).json()
-        user_id = user_profile.get("id")
-        first_name = user_profile.get("firstName").get("localized").get("en_US")
-        last_name = user_profile.get("lastName").get("localized").get("en_US")
+        )
+        if (user_profile.status_code == 401):
+            raise UserProfileNotFoundException("User profile not found")
+        user_profile_data = user_profile.json()
+        user_id = user_profile_data.get("id")
+        first_name = user_profile_data.get("firstName").get("localized").get("en_US")
+        last_name = user_profile_data.get("lastName").get("localized").get("en_US")
         try:
             display_image_url = (
                 user_profile.get("profilePicture")
@@ -747,8 +752,11 @@ class LinkedInLogin:
         email = requests.get(
             "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
             headers={"Authorization": f"Bearer {token}"},
-        ).json()
-        return email.get("elements")[0].get("handle~").get("emailAddress")
+        )
+        if (email.status_code == 401):
+            raise UserEmailNotFoundException("User email not found")
+        email_data = email.json()
+        return email_data.get("elements")[0].get("handle~").get("emailAddress")
 
 
 class UserRequestService:
