@@ -685,13 +685,22 @@ class LinkedInLogin:
         return {**user_profile, "email": email}
 
     async def authenticate(self, code, socket_id):
-        token = self.get_token(code=code)
-        user = self.get_linkedin_user(token)
-        UserService(self.config).create_if_not_exists(**user)
-        await self.sio.emit(
-            "provider", {"access_token": token}, namespace="/v1/", room=socket_id
-        )
-        self.sio.leave_room(socket_id, "linkedin")
+        try:
+            token = self.get_token(code=code)
+            user = self.get_linkedin_user(token)
+            UserService(self.config).create_if_not_exists(**user)
+            await self.sio.emit(
+                "provider", {"access_token": token}, namespace="/v1/", room=socket_id
+            )
+        except AttributeError:
+            await self.sio.emit(
+                "provider",
+                {"error": "request failed"},
+                namespace="/v1/",
+                room=socket_id,
+            )
+        finally:
+            self.sio.leave_room(socket_id, "linkedin")
 
     def get_token(self, code):
         host = self.config.get("HOST")
