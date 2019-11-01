@@ -51,6 +51,7 @@ class UserService:
         self.hasher = hasher
 
     def create_if_not_exists(self, email, display_image_url, full_name, user_id):
+        with session_scope() as session:
             user = session.query(User).filter_by(user_id=user_id).one_or_none()
             if user is None:
                 user = User(
@@ -67,6 +68,7 @@ class UserService:
                 user.display_image_url = display_image_url
                 session.flush()
                 return user.asdict()
+
             result = user.asdict()
         return result
 
