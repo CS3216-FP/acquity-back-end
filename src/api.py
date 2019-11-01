@@ -13,7 +13,7 @@ def auth_required(f):
     @wraps(f)
     async def decorated_function(request, *args, **kwargs):
         PREFIX = "Bearer "
-        header = request.get("Authorization", None)
+        header = request.headers.get("Authorization")
         if header is None:
             raise InvalidAuthorizationTokenException("Invalid Authorization Bearer")
         if not header.startswith(PREFIX):
