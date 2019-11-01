@@ -14,23 +14,24 @@ user_service = UserService(config=APP_CONFIG, hasher=plaintext)
 
 def test_create():
     user_service.create_if_not_exists(
-        email="a@a", user_id="123456", full_name="Ben", display_image_url=None
-    )
-
+        email="a@a.com", 
+        display_image_url=None, 
+        full_name="Ben", 
+        user_id="testing")
     with session_scope() as session:
-        users = [u.asdict() for u in session.query(User).all()]
+        user = session.query(User).one()
+        user = user.asdict()
 
-    assert len(users) == 1
     assert_dict_in(
-        {
-            "email": "a@a",
-            "user_id": "123456",
-            "full_name": "Ben",
-            "can_buy": False,
-            "can_sell": False,
-        },
-        users[0],
+        {"email": "a@a.com", "full_name": "Ben", "can_buy": False, "can_sell": False, "user_id": "testing", provider:"linkedin"}, user
     )
+
+
+def test_get_user_by_linkedin_id():
+    user_params = create_user()
+
+    user = user_service.get_user_by_linkedin_id(user_id="abcdef")
+    assert user_params == user
 
 
 def test_invite_to_be_seller__unauthorized():
@@ -67,3 +68,18 @@ def test_invite_to_be_buyer__authorized():
 
     with session_scope() as session:
         assert session.query(User).get(invited_id).can_buy
+
+
+def test_get_user():
+    user_params = create_user()
+
+    user_id = user_service.get_user_by_linkedin_id(user_id="abcdef")[
+        "id"
+    ]
+
+    user = user_service.get_user(id=user_id)
+
+    assert user_params == user
+
+    with pytest.raises(ResourceNotFoundException):
+        user_service.get_user(id="00000000-0000-0000-0000-000000000000")

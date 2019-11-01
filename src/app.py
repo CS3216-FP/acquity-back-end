@@ -24,6 +24,7 @@ from src.services import (
     RoundService,
     SecurityService,
     SellOrderService,
+    UserRequestService,
     UserService,
 )
 
@@ -59,6 +60,7 @@ app.banned_pair_service = BannedPairService(app.config)
 app.chat_room_service = ChatRoomService(app.config)
 app.chat_service = ChatService(app.config)
 app.linkedin_login = LinkedInLogin(app.config, sio)
+app.user_request_service = UserRequestService(app.config)
 
 initialize_cors(app)
 
