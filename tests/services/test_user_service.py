@@ -18,6 +18,7 @@ def test_create():
         display_image_url=None, 
         full_name="Ben", 
         user_id="testing")
+        
     with session_scope() as session:
         user = session.query(User).one()
         user = user.asdict()
@@ -25,6 +26,7 @@ def test_create():
     assert_dict_in(
         {"email": "a@a.com", "full_name": "Ben", "can_buy": False, "can_sell": False, "user_id": "testing", provider:"linkedin"}, user
     )
+    
 
 
 def test_get_user_by_linkedin_id():
