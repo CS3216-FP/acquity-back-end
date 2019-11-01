@@ -29,7 +29,6 @@ from src.exceptions import (
     ResourceNotFoundException,
     ResourceNotOwnedException,
     UnauthorizedException,
-    UserEmailNotFoundException,
     UserProfileNotFoundException,
 )
 from src.match import match_buyers_and_sellers
@@ -694,7 +693,7 @@ class LinkedInLogin:
             await self.sio.emit(
                 "provider", {"access_token": token}, namespace="/v1/", room=socket_id
             )
-        except (UserEmailNotFoundException, UserProfileNotFoundException):
+        except UserProfileNotFoundException:
             await self.sio.emit(
                 "provider",
                 {"error": "request failed"},
@@ -721,19 +720,19 @@ class LinkedInLogin:
         return token.get("access_token")
 
     def get_user_profile(self, token):
-        user_profile = requests.get(
+        user_profile_request = requests.get(
             "https://api.linkedin.com/v2/me?projection=(id,firstName,lastName,profilePicture(displayImage~:playableStreams))",
             headers={"Authorization": f"Bearer {token}"},
         )
-        if (user_profile.status_code == 401):
+        if user_profile_request.status_code == 401:
             raise UserProfileNotFoundException("User profile not found")
-        user_profile_data = user_profile.json()
+        user_profile_data = user_profile_request.json()
         user_id = user_profile_data.get("id")
         first_name = user_profile_data.get("firstName").get("localized").get("en_US")
         last_name = user_profile_data.get("lastName").get("localized").get("en_US")
         try:
             display_image_url = (
-                user_profile.get("profilePicture")
+                user_profile_data.get("profilePicture")
                 .get("displayImage~")
                 .get("elements")[-1]
                 .get("identifiers")[0]
@@ -749,13 +748,13 @@ class LinkedInLogin:
         }
 
     def get_user_email(self, token):
-        email = requests.get(
+        email_request = requests.get(
             "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
             headers={"Authorization": f"Bearer {token}"},
         )
-        if (email.status_code == 401):
-            raise UserEmailNotFoundException("User email not found")
-        email_data = email.json()
+        if email_request.status_code == 401:
+            raise UserProfileNotFoundException("User email not found")
+        email_data = email_request.json()
         return email_data.get("elements")[0].get("handle~").get("emailAddress")
 
 
