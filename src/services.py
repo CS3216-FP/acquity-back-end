@@ -45,7 +45,9 @@ class UserService:
         self.config = config
         self.hasher = hasher
 
-    def create_if_not_exists(self, email, display_image_url, full_name, user_id, is_buy):
+    def create_if_not_exists(
+        self, email, display_image_url, full_name, user_id, is_buy
+    ):
         with session_scope() as session:
             user = session.query(User).filter_by(user_id=user_id).one_or_none()
             if user is None:

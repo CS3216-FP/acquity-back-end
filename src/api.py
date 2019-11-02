@@ -16,7 +16,7 @@ def auth_required(f):
         header = request.headers.get("Authorization")
         if header is None or not header.startswith(PREFIX):
             raise InvalidAuthorizationTokenException("Invalid Authorization Bearer")
-        token = header[len(PREFIX):]
+        token = header[len(PREFIX) :]
         linkedin_user = request.app.linkedin_login.get_linkedin_user(token=token)
         user = request.app.user_service.get_user_by_linkedin_id(
             user_id=linkedin_user.get("user_id")
@@ -192,14 +192,20 @@ async def linkedin_auth_seller(request):
 async def linkedin_auth_callback_buyer(request):
     code = request.args.get("code")
     state = request.args.get("state")
-    return json(request.app.linkedin_login.authenticate(code=code, socket_id=state, is_buy=True))
+    return json(
+        request.app.linkedin_login.authenticate(code=code, socket_id=state, is_buy=True)
+    )
 
 
 @blueprint.get("/linkedin/auth/callback/seller")
 async def linkedin_auth_callback_seller(request):
     code = request.args.get("code")
     state = request.args.get("state")
-    return json(request.app.linkedin_login.authenticate(code=code, socket_id=state, is_buy=False))
+    return json(
+        request.app.linkedin_login.authenticate(
+            code=code, socket_id=state, is_buy=False
+        )
+    )
 
 
 @blueprint.get("/requests/buy/")
