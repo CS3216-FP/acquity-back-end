@@ -648,7 +648,7 @@ class LinkedInLogin:
     def _get_token(self, code, is_buy):
         redirect_uri = self._get_redirect_url(is_buy)
 
-        token = requests.post(
+        return requests.post(
             "https://www.linkedin.com/oauth/v2/accessToken",
             headers={"Content-Type": "x-www-form-urlencoded"},
             params={
@@ -660,12 +660,10 @@ class LinkedInLogin:
             },
         ).json()
 
-        return token.get("access_token")
-
     def _get_redirect_url(self, is_buy):
         host = self.config.get("HOST")
         redirect_suffix = "buyer" if is_buy else "seller"
-        return f"{host}/v1/linkedin/auth/callback/{redirect_suffix}"
+        return f"{host}/v1/auth/callback/{redirect_suffix}/callback"
 
     def _get_user_profile(self, token):
         user_profile_request = requests.get(

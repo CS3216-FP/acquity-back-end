@@ -174,23 +174,23 @@ async def ban_user(request, user):
     )
 
 
-@blueprint.get("/linkedin/auth/buyer")
+@blueprint.get("/auth/linkedin/buyer")
 async def linkedin_auth_buyer(request):
     return request.app.linkedin_login.get_auth_url(is_buy=True)
 
 
-@blueprint.get("/linkedin/auth/seller")
+@blueprint.get("/auth/linkedin/seller")
 async def linkedin_auth_seller(request):
     return request.app.linkedin_login.get_auth_url(is_buy=False)
 
 
-@blueprint.get("/linkedin/auth/callback/buyer")
+@blueprint.get("/auth/linkedin/buyer/callback")
 async def linkedin_auth_callback_buyer(request):
     code = request.args.get("code")
     return json(request.app.linkedin_login.authenticate(code=code, is_buy=True))
 
 
-@blueprint.get("/linkedin/auth/callback/seller")
+@blueprint.get("/auth/linkedin/seller/callback")
 async def linkedin_auth_callback_seller(request):
     code = request.args.get("code")
     return json(request.app.linkedin_login.authenticate(code=code, is_buy=False))
