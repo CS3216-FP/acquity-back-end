@@ -204,18 +204,33 @@ async def ban_user(request, user):
     )
 
 
-@blueprint.get("/linkedin/auth")
-async def linkedin_auth(request):
+@blueprint.get("/linkedin/auth/buyer")
+async def linkedin_auth_buyer(request):
     socket_id = request.args.get("socketId")
-    url = request.app.linkedin_login.get_auth_url(socket_id)
+    url = request.app.linkedin_login.get_auth_url(socket_id, is_buy=True)
     return response.redirect(url)
 
 
-@blueprint.get("/linkedin/auth/callback")
-async def linkedin_auth(request):
+@blueprint.get("/linkedin/auth/seller")
+async def linkedin_auth_seller(request):
+    socket_id = request.args.get("socketId")
+    url = request.app.linkedin_login.get_auth_url(socket_id, is_buy=False)
+    return response.redirect(url)
+
+
+@blueprint.get("/linkedin/auth/callback/buyer")
+async def linkedin_auth_callback_buyer(request):
     code = request.args.get("code")
     state = request.args.get("state")
-    await request.app.linkedin_login.authenticate(code=code, socket_id=state)
+    await request.app.linkedin_login.authenticate(code=code, socket_id=state, is_buy=True)
+    return json({"data": "success"})
+
+
+@blueprint.get("/linkedin/auth/callback/seller")
+async def linkedin_auth_callback_seller(request):
+    code = request.args.get("code")
+    state = request.args.get("state")
+    await request.app.linkedin_login.authenticate(code=code, socket_id=state, is_buy=False)
     return json({"data": "success"})
 
 
