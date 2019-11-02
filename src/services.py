@@ -620,9 +620,7 @@ class LinkedInLogin:
         self.config = config
         self.sio = sio
 
-    def get_auth_url(self, socket_id, is_buy):
-        self.join_room(socket_id)
-
+    def get_auth_url(self, is_buy):
         host = self.config.get("HOST")
         client_id = self.config.get("CLIENT_ID")
         response_type = "code"
@@ -631,35 +629,21 @@ class LinkedInLogin:
         redirect_uri = f"{host}/v1/linkedin/auth/callback/{redirect_suffix}"
 
         scope = "r_liteprofile%20r_emailaddress%20w_member_social%20r_basicprofile"
-        url = f"https://www.linkedin.com/oauth/v2/authorization?response_type={response_type}&client_id={client_id}&redirect_uri={redirect_uri}&scope={scope}&state={socket_id}"
+        # TODO add state
+        url = f"https://www.linkedin.com/oauth/v2/authorization?response_type={response_type}&client_id={client_id}&redirect_uri={redirect_uri}&scope={scope}"
 
         return url
-
-    def join_room(self, socket_id):
-        self.sio.enter_room(socket_id, "linkedin")
 
     def get_linkedin_user(self, token):
         user_profile = self.get_user_profile(token=token)
         email = self.get_user_email(token=token)
         return {**user_profile, "email": email}
 
-    async def authenticate(self, code, socket_id, is_buy):
-        try:
-            token = self.get_token(code=code)
-            user = self.get_linkedin_user(token)
-            UserService(self.config).create_if_not_exists(**user, is_buy=is_buy)
-            await self.sio.emit(
-                "provider", {"access_token": token}, namespace="/v1/", room=socket_id
-            )
-        except UserProfileNotFoundException:
-            await self.sio.emit(
-                "provider",
-                {"error": "request failed"},
-                namespace="/v1/",
-                room=socket_id,
-            )
-        finally:
-            self.sio.leave_room(socket_id, "linkedin")
+    def authenticate(self, code, is_buy):
+        token = self.get_token(code=code)
+        user = self.get_linkedin_user(token)
+        UserService(self.config).create_if_not_exists(**user, is_buy=is_buy)
+        return {"access_token": token}
 
     def get_token(self, code):
         host = self.config.get("HOST")
