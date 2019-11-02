@@ -100,6 +100,7 @@ class UserService:
 class SellOrderService:
     def __init__(self, config):
         self.config = config
+        self.email_service = EmailService(config)
 
     @validate_input(CREATE_SELL_ORDER_SCHEMA)
     def create_order(self, user_id, number_of_shares, price, security_id, scheduler):
@@ -107,6 +108,8 @@ class SellOrderService:
             user = session.query(User).get(user_id)
             if user is None:
                 raise ResourceNotFoundException()
+            if not user.can_sell:
+                raise UnauthorizedException("User cannot place sell orders.")
 
             sell_order_count = (
                 session.query(SellOrder).filter_by(user_id=user_id).count()
@@ -132,6 +135,11 @@ class SellOrderService:
                 session.add(sell_order)
 
             session.commit()
+
+            self.email_service.send_email(
+                emails=[user.email], template="create_sell_order"
+            )
+
             return sell_order.asdict()
 
     @validate_input({"user_id": UUID_RULE})
@@ -165,6 +173,12 @@ class SellOrderService:
                 sell_order.price = new_price
 
             session.commit()
+
+            user = session.query(User).get(sell_order.user_id)
+            self.email_service.send_email(
+                emails=[user.email], template="edit_sell_order"
+            )
+
             return sell_order.asdict()
 
     @validate_input(DELETE_ORDER_SCHEMA)
@@ -183,6 +197,7 @@ class SellOrderService:
 class BuyOrderService:
     def __init__(self, config):
         self.config = config
+        self.email_service = EmailService(config)
 
     @validate_input(CREATE_BUY_ORDER_SCHEMA)
     def create_order(self, user_id, number_of_shares, price, security_id):
@@ -190,6 +205,8 @@ class BuyOrderService:
             user = session.query(User).get(user_id)
             if user is None:
                 raise ResourceNotFoundException()
+            if not user.can_buy:
+                raise UnauthorizedException("User cannot place buy orders.")
 
             buy_order_count = session.query(BuyOrder).filter_by(user_id=user_id).count()
             if buy_order_count >= self.config["ACQUITY_BUY_ORDER_PER_ROUND_LIMIT"]:
@@ -207,6 +224,11 @@ class BuyOrderService:
 
             session.add(buy_order)
             session.commit()
+
+            self.email_service.send_email(
+                emails=[user.email], template="create_buy_order"
+            )
+
             return buy_order.asdict()
 
     @validate_input({"user_id": UUID_RULE})
@@ -240,6 +262,12 @@ class BuyOrderService:
                 buy_order.price = new_price
 
             session.commit()
+
+            user = session.query(User).get(buy_order.user_id)
+            self.email_service.send_email(
+                emails=[user.email], template="edit_buy_order"
+            )
+
             return buy_order.asdict()
 
     @validate_input(DELETE_ORDER_SCHEMA)
@@ -709,6 +737,7 @@ class LinkedInLogin:
 class UserRequestService:
     def __init__(self, config):
         self.config = config
+        self.email_service = EmailService(config)
 
     @validate_input({"subject_id": UUID_RULE})
     def get_buy_requests(self, subject_id):
@@ -739,8 +768,14 @@ class UserRequestService:
 
             if request.is_buy:
                 user.can_buy = True
+                self.email_service.send_email(
+                    emails=[user.email], template="approved_buyer"
+                )
             else:
                 user.can_sell = False
+                self.email_service.send_email(
+                    emails=[user.email], template="approved_seller"
+                )
 
             request.delete()
 
@@ -750,4 +785,11 @@ class UserRequestService:
             if not session.query(User).get(subject_id).is_committee:
                 raise InvisibleUnauthorizedException("Not committee")
 
-            session.query(UserRequest).get(request_id).delete()
+            request = session.query(UserRequest).get(request_id)
+            user = session.query(User).get(request.user_id)
+
+            email_template = "rejected_buyer" if request.is_buy else "rejected_seller"
+
+            request.delete()
+
+            self.email_service.send_email(emails=[user.email], template=email_template)
