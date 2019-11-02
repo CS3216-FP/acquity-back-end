@@ -3,6 +3,14 @@ import json
 import requests
 
 EMAIL_TEMPLATE = {
+    "register_buyer": {
+        "subject": "Welcome to Acquity!",
+        "text": "Welcome to Acquity! Please wait while our committee approves your request to be a buyer.",
+    },
+    "register_seller": {
+        "subject": "Welcome to Acquity!",
+        "text": "Welcome to Acquity! Please wait while our committee approves your request to be a seller.",
+    },
     "round_opened": {"subject": "Round has opened", "text": "Place your bids/offers!"},
     "match_done_has_match": {
         "subject": "You got a match!",

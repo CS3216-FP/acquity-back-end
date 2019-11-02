@@ -46,6 +46,7 @@ class UserService:
     def __init__(self, config, hasher=argon2):
         self.config = config
         self.hasher = hasher
+        self.email_service = EmailService(config)
 
     def create_if_not_exists(
         self, email, display_image_url, full_name, user_id, is_buy
@@ -67,6 +68,9 @@ class UserService:
 
                 req = UserRequest(user_id=str(user.id), is_buy=is_buy)
                 session.add(req)
+
+                email_template = "register_buyer" if is_buy else "register_seller"
+                self.email_service.send_email(emails=[email], template=email_template)
             else:
                 user.email = email
                 user.full_name = full_name
@@ -280,6 +284,7 @@ class SecurityService:
 class RoundService:
     def __init__(self, config):
         self.config = config
+        self.email_service = EmailService(config)
 
     def get_all(self):
         with session_scope() as session:
@@ -332,7 +337,7 @@ class RoundService:
                 buy_order.round_id = str(new_round.id)
 
             emails = [user.email for user in session.query(User).all()]
-            EmailService(self.config).send_email(emails, template="round_opened")
+            self.email_service.send_email(emails, template="round_opened")
 
         if scheduler is not None:
             scheduler.add_job(
@@ -347,6 +352,7 @@ class RoundService:
 class MatchService:
     def __init__(self, config):
         self.config = config
+        self.email_service = EmailService(config)
 
     def run_matches(self):
         round_id = RoundService(self.config).get_active()["id"]
@@ -443,7 +449,7 @@ class MatchService:
                 .filter(User.id.in_(matched_user_ids))
                 .all()
             ]
-            EmailService(self.config).send_email(
+            self.email_service.send_email(
                 matched_emails, template="match_done_has_match"
             )
 
@@ -453,7 +459,7 @@ class MatchService:
                 .filter(User.id.in_(all_user_ids - matched_user_ids))
                 .all()
             ]
-            EmailService(self.config).send_email(
+            self.email_service.send_email(
                 unmatched_emails, template="match_done_no_match"
             )
 

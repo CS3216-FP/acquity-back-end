@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 from passlib.hash import plaintext
 
@@ -19,7 +21,12 @@ def test_create__is_buy():
         "display_image_url": "http://blah",
         "is_buy": True,
     }
-    user_service.create_if_not_exists(**user_params)
+
+    with patch("src.services.EmailService.send_email") as mock:
+        user_service.create_if_not_exists(**user_params)
+        mock.assert_called_with(
+            emails=[user_params["email"]], template="register_buyer"
+        )
 
     with session_scope() as session:
         user = session.query(User).one().asdict()
@@ -41,7 +48,12 @@ def test_create__is_sell():
         "display_image_url": "http://blah",
         "is_buy": False,
     }
-    user_service.create_if_not_exists(**user_params)
+
+    with patch("src.services.EmailService.send_email") as mock:
+        user_service.create_if_not_exists(**user_params)
+        mock.assert_called_with(
+            emails=[user_params["email"]], template="register_seller"
+        )
 
     with session_scope() as session:
         user = session.query(User).one().asdict()
