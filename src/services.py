@@ -623,12 +623,10 @@ class LinkedInLogin:
         self.sio = sio
 
     def get_auth_url(self, is_buy):
-        host = self.config.get("HOST")
         client_id = self.config.get("CLIENT_ID")
         response_type = "code"
 
-        redirect_suffix = "buyer" if is_buy else "seller"
-        redirect_uri = f"{host}/v1/linkedin/auth/callback/{redirect_suffix}"
+        redirect_uri = self._get_redirect_url(is_buy)
 
         scope = "r_liteprofile%20r_emailaddress%20w_member_social%20r_basicprofile"
         # TODO add state
@@ -636,20 +634,20 @@ class LinkedInLogin:
 
         return url
 
-    def get_linkedin_user(self, token):
-        user_profile = self.get_user_profile(token=token)
-        email = self.get_user_email(token=token)
-        return {**user_profile, "email": email}
-
     def authenticate(self, code, is_buy):
-        token = self.get_token(code=code)
-        user = self.get_linkedin_user(token)
+        token = self._get_token(code=code)
+        user = self._get_linkedin_user(token)
         UserService(self.config).create_if_not_exists(**user, is_buy=is_buy)
         return {"access_token": token}
 
-    def get_token(self, code):
-        host = self.config.get("HOST")
-        redirect_uri = f"{host}/v1/linkedin/auth/callback"
+    def _get_linkedin_user(self, token):
+        user_profile = self._get_user_profile(token=token)
+        email = self._get_user_email(token=token)
+        return {**user_profile, "email": email}
+
+    def _get_token(self, code, is_buy):
+        redirect_uri = self._get_redirect_url(is_buy)
+
         token = requests.post(
             "https://www.linkedin.com/oauth/v2/accessToken",
             headers={"Content-Type": "x-www-form-urlencoded"},
@@ -661,9 +659,15 @@ class LinkedInLogin:
                 "client_secret": self.config.get("CLIENT_SECRET"),
             },
         ).json()
+
         return token.get("access_token")
 
-    def get_user_profile(self, token):
+    def _get_redirect_url(self, is_buy):
+        host = self.config.get("HOST")
+        redirect_suffix = "buyer" if is_buy else "seller"
+        return f"{host}/v1/linkedin/auth/callback/{redirect_suffix}"
+
+    def _get_user_profile(self, token):
         user_profile_request = requests.get(
             "https://api.linkedin.com/v2/me?projection=(id,firstName,lastName,profilePicture(displayImage~:playableStreams))",
             headers={"Authorization": f"Bearer {token}"},
@@ -691,7 +695,7 @@ class LinkedInLogin:
             "user_id": user_id,
         }
 
-    def get_user_email(self, token):
+    def _get_user_email(self, token):
         email_request = requests.get(
             "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
             headers={"Authorization": f"Bearer {token}"},
