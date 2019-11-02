@@ -71,6 +71,14 @@ class UserService:
 
                 email_template = "register_buyer" if is_buy else "register_seller"
                 self.email_service.send_email(emails=[email], template=email_template)
+
+                committee_emails = [
+                    u.email
+                    for u in session.query(User).filter_by(is_committee=True).all()
+                ]
+                self.email_service.send_email(
+                    emails=committee_emails, template="new_user_review"
+                )
             else:
                 user.email = email
                 user.full_name = full_name

@@ -52,6 +52,10 @@ EMAIL_TEMPLATE = {
         "subject": "No match!",
         "text": "Your price might be too high/low! Try again.",
     },
+    "new_user_review": {
+        "subject": "A new user has registered",
+        "text": "A new user has registered. Please approve/reject him/her.",
+    },
 }
 
 

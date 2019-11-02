@@ -22,14 +22,15 @@ def test_create__is_buy():
         "is_buy": True,
     }
 
+    committee_email = create_user(is_committee=True)["email"]
+
     with patch("src.services.EmailService.send_email") as mock:
         user_service.create_if_not_exists(**user_params)
-        mock.assert_called_with(
-            emails=[user_params["email"]], template="register_buyer"
-        )
+        mock.assert_any_call(emails=[user_params["email"]], template="register_buyer")
+        mock.assert_any_call(emails=[committee_email], template="new_user_review")
 
     with session_scope() as session:
-        user = session.query(User).one().asdict()
+        user = session.query(User).filter_by(email='a@a.io').one().asdict()
         req = session.query(UserRequest).one().asdict()
 
     user_expected = user_params
@@ -49,14 +50,15 @@ def test_create__is_sell():
         "is_buy": False,
     }
 
+    committee_email = create_user(is_committee=True)["email"]
+
     with patch("src.services.EmailService.send_email") as mock:
         user_service.create_if_not_exists(**user_params)
-        mock.assert_called_with(
-            emails=[user_params["email"]], template="register_seller"
-        )
+        mock.assert_any_call(emails=[user_params["email"]], template="register_seller")
+        mock.assert_any_call(emails=[committee_email], template="new_user_review")
 
     with session_scope() as session:
-        user = session.query(User).one().asdict()
+        user = session.query(User).filter_by(email='a@a.io').one().asdict()
         req = session.query(UserRequest).one().asdict()
 
     user_expected = user_params
