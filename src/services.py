@@ -63,7 +63,7 @@ class UserService:
                 session.add(user)
                 session.flush()
 
-                req = UserRequest(user_id=user.id, is_buy=is_buy)
+                req = UserRequest(user_id=str(user.id), is_buy=is_buy)
                 session.add(req)
             else:
                 user.email = email
