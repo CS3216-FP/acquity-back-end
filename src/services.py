@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 import requests
 from passlib.hash import argon2
-from sqlalchemy import and_, asc, desc, or_
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import aliased
 from sqlalchemy.sql import func
 
@@ -32,12 +32,9 @@ from src.match import match_buyers_and_sellers
 from src.schemata import (
     CREATE_BUY_ORDER_SCHEMA,
     CREATE_SELL_ORDER_SCHEMA,
-    CREATE_USER_SCHEMA,
     DELETE_ORDER_SCHEMA,
     EDIT_MARKET_PRICE_SCHEMA,
     EDIT_ORDER_SCHEMA,
-    INVITE_SCHEMA,
-    USER_AUTH_SCHEMA,
     UUID_RULE,
     validate_input,
 )
