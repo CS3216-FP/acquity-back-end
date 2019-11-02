@@ -42,13 +42,6 @@ async def root(request):
     return json({"hello": "world"})
 
 
-@blueprint.post("/user/")
-@expects_json_object
-async def create_user(request):
-    user = request.app.user_service.create_if_not_exists(**request.json)
-    return json(user)
-
-
 @blueprint.get("/sell_order/")
 @auth_required
 async def get_sell_orders_by_user(request, user):
