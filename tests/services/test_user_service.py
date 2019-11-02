@@ -77,7 +77,7 @@ def test_create__user_exists():
         "display_image_url": "http://blah",
         "is_buy": True,
     }
-    with patch("src.services.EmailService.send_email") as mock:
+    with patch("src.services.EmailService.send_email"):
         user_service.create_if_not_exists(
             **{
                 **user_params,
@@ -86,9 +86,10 @@ def test_create__user_exists():
                 "display_image_url": "old",
             }
         )
-        mock.assert_not_called()
 
-    user_service.create_if_not_exists(**user_params)
+    with patch("src.services.EmailService.send_email") as mock:
+        user_service.create_if_not_exists(**user_params)
+        mock.assert_not_called()
 
     with session_scope() as session:
         user = session.query(User).one().asdict()
