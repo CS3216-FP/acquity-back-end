@@ -30,7 +30,7 @@ def test_create__is_buy():
         mock.assert_any_call(emails=[committee_email], template="new_user_review")
 
     with session_scope() as session:
-        user = session.query(User).filter_by(email='a@a.io').one().asdict()
+        user = session.query(User).filter_by(email="a@a.io").one().asdict()
         req = session.query(UserRequest).one().asdict()
 
     user_expected = user_params
@@ -58,7 +58,7 @@ def test_create__is_sell():
         mock.assert_any_call(emails=[committee_email], template="new_user_review")
 
     with session_scope() as session:
-        user = session.query(User).filter_by(email='a@a.io').one().asdict()
+        user = session.query(User).filter_by(email="a@a.io").one().asdict()
         req = session.query(UserRequest).one().asdict()
 
     user_expected = user_params
@@ -77,14 +77,17 @@ def test_create__user_exists():
         "display_image_url": "http://blah",
         "is_buy": True,
     }
-    user_service.create_if_not_exists(
-        **{
-            **user_params,
-            "email": "b@b.io",
-            "full_name": "Boo",
-            "display_image_url": "old",
-        }
-    )
+    with patch("src.services.EmailService.send_email") as mock:
+        user_service.create_if_not_exists(
+            **{
+                **user_params,
+                "email": "b@b.io",
+                "full_name": "Boo",
+                "display_image_url": "old",
+            }
+        )
+        mock.assert_not_called()
+
     user_service.create_if_not_exists(**user_params)
 
     with session_scope() as session:

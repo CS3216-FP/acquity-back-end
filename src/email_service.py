@@ -64,6 +64,9 @@ class EmailService:
         self.config = config
 
     def send_email(self, emails, template):
+        if not config["MAILGUN_ENABLE"]:
+            return
+
         data = EMAIL_TEMPLATE[template]
         return requests.post(
             f"{self.config['MAILGUN_API_BASE_URL']}/messages",
