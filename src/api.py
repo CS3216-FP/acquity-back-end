@@ -175,9 +175,7 @@ async def linkedin_auth(request):
 @blueprint.post("/auth/linkedin")
 @expects_json_object
 async def linkedin_auth_callback(request):
-    return json(
-        request.app.linkedin_login.authenticate(**request.json)
-    )
+    return json(request.app.linkedin_login.authenticate(**request.json))
 
 
 @blueprint.get("/requests/buy/")
