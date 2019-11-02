@@ -672,13 +672,13 @@ class LinkedInLogin:
 
         scope = "r_liteprofile%20r_emailaddress%20w_member_social%20r_basicprofile"
         # TODO add state
-        url = f"https://www.linkedin.com/oauth/v2/authorization?response_type={response_type}&client_id={client_id}&redirect_uri={redirect_uri}&scope={scope}"
+        url = f"https://www.linkedin.com/oauth/v2/authorization?response_type={response_type}&client_id={client_id}&redirect_uri={redirect_uri[0]}&scope={scope}"
 
         return url
 
     @validate_input(AUTHENTICATE_SCHEMA)
     def authenticate(self, code, redirect_uri, is_buy):
-        token = self._get_token(code=code, redirect_uri=redirect_uri)
+        token = self._get_token(code=code, redirect_uri=redirect_uri[0])
         user = self._get_linkedin_user(token)
         UserService(self.config).create_if_not_exists(**user, is_buy=is_buy)
         return {"access_token": token}
