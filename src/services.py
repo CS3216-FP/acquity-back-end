@@ -74,51 +74,6 @@ class UserService:
             session.commit()
             return user.asdict()
 
-    @validate_input({"user_id": UUID_RULE})
-    def activate_buy_privileges(self, user_id):
-        with session_scope() as session:
-            user = session.query(User).get(user_id)
-            if user is None:
-                raise ResourceNotFoundException()
-            user.can_buy = True
-            session.commit()
-            result = user.asdict()
-        return result
-
-    @validate_input(INVITE_SCHEMA)
-    def invite_to_be_seller(self, inviter_id, invited_id):
-        with session_scope() as session:
-            inviter = session.query(User).get(inviter_id)
-            if inviter is None:
-                raise ResourceNotFoundException()
-            if not inviter.is_committee:
-                raise UnauthorizedException("Inviter is not a committee.")
-
-            invited = session.query(User).get(invited_id)
-            invited.can_sell = True
-
-            session.commit()
-
-            result = invited.asdict()
-        return result
-
-    @validate_input(INVITE_SCHEMA)
-    def invite_to_be_buyer(self, inviter_id, invited_id):
-        with session_scope() as session:
-            inviter = session.query(User).get(inviter_id)
-            if inviter is None:
-                raise ResourceNotFoundException()
-            if not inviter.is_committee:
-                raise UnauthorizedException("Inviter is not a committee.")
-
-            invited = session.query(User).get(invited_id)
-            invited.can_buy = True
-
-            session.commit()
-
-            result = invited.asdict()
-        return result
-
     @validate_input({"id": UUID_RULE})
     def get_user(self, id):
         with session_scope() as session:

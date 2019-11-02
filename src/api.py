@@ -49,36 +49,6 @@ async def create_user(request):
     return json(user)
 
 
-@expects_json_object
-async def user_login(request):
-    user = request.app.user_service.authenticate(**request.json)
-    if user is None:
-        raise AuthenticationFailed()
-    return {"id": user["id"]}
-
-
-@blueprint.post("/user/invite/seller")
-@auth_required
-@expects_json_object
-async def invite_seller(request, user):
-    return json(
-        request.app.user_service.invite_to_be_seller(
-            **request.json, inviter_id=user["id"]
-        )
-    )
-
-
-@blueprint.post("/user/invite/buyer")
-@auth_required
-@expects_json_object
-async def invite_buyer(request, user):
-    return json(
-        request.app.user_service.invite_to_be_buyer(
-            **request.json, inviter_id=user["id"]
-        )
-    )
-
-
 @blueprint.get("/sell_order/")
 @auth_required
 async def get_sell_orders_by_user(request, user):
