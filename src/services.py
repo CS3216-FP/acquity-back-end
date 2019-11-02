@@ -624,7 +624,7 @@ class LinkedInLogin:
         self.config = config
 
     @validate_input(GET_AUTH_URL_SHCMEA)
-    def get_auth_url(self, redirect_uri, is_buy):
+    def get_auth_url(self, redirect_uri):
         client_id = self.config.get("CLIENT_ID")
         response_type = "code"
 
@@ -636,7 +636,7 @@ class LinkedInLogin:
 
     @validate_input(AUTHENTICATE_SCHEMA)
     def authenticate(self, code, redirect_uri, is_buy):
-        token = self._get_token(code=code, redirect_uri=redirect_uri, is_buy=is_buy)
+        token = self._get_token(code=code, redirect_uri=redirect_uri)
         user = self._get_linkedin_user(token)
         UserService(self.config).create_if_not_exists(**user, is_buy=is_buy)
         return {"access_token": token}
@@ -646,7 +646,7 @@ class LinkedInLogin:
         email = self._get_user_email(token=token)
         return {**user_profile, "email": email}
 
-    def _get_token(self, code, redirect_uri, is_buy):
+    def _get_token(self, code, redirect_uri):
         return requests.post(
             "https://www.linkedin.com/oauth/v2/accessToken",
             headers={"Content-Type": "x-www-form-urlencoded"},
@@ -659,7 +659,8 @@ class LinkedInLogin:
             },
         ).json()
 
-    def _get_user_profile(self, token):
+    @staticmethod
+    def _get_user_profile(token):
         user_profile_request = requests.get(
             "https://api.linkedin.com/v2/me?projection=(id,firstName,lastName,profilePicture(displayImage~:playableStreams))",
             headers={"Authorization": f"Bearer {token}"},
@@ -687,7 +688,8 @@ class LinkedInLogin:
             "user_id": user_id,
         }
 
-    def _get_user_email(self, token):
+    @staticmethod
+    def _get_user_email(token):
         email_request = requests.get(
             "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
             headers={"Authorization": f"Bearer {token}"},
