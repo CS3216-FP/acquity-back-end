@@ -37,11 +37,11 @@ def test_get_active__all_concluded():
 
 
 def test_should_round_start__unique_sellers():
-    create_sell_order("1", number_of_shares=5)
+    create_sell_order("1", number_of_shares=5, round_id=None)
     assert not round_service.should_round_start()
-    create_sell_order("2", number_of_shares=5)
+    create_sell_order("2", number_of_shares=5, round_id=None)
     assert round_service.should_round_start()
-    create_sell_order("3", number_of_shares=5)
+    create_sell_order("3", number_of_shares=5, round_id=None)
     assert round_service.should_round_start()
 
 
