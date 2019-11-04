@@ -59,7 +59,7 @@ def test_approve_request():
         request_id=buy_req["id"], subject_id=admin["id"]
     )
     with session_scope() as session:
-        assert session.query(UserRequest).count() == 0
+        assert session.query(UserRequest).get(buy_req).closed_by_user_id == admin["id"]
         assert session.query(User).get(buy_req["user_id"]).can_buy
 
     seller = create_user("3", can_buy=False, can_sell=False)
@@ -68,7 +68,7 @@ def test_approve_request():
         request_id=sell_req["id"], subject_id=admin["id"]
     )
     with session_scope() as session:
-        assert session.query(UserRequest).count() == 0
+        assert session.query(UserRequest).get(sell_req).closed_by_user_id == admin["id"]
         assert session.query(User).get(sell_req["user_id"]).can_sell
 
 
@@ -90,7 +90,7 @@ def test_reject_request():
         request_id=buy_req["id"], subject_id=admin["id"]
     )
     with session_scope() as session:
-        assert session.query(UserRequest).count() == 0
+        assert session.query(UserRequest).get(buy_req).closed_by_user_id == admin["id"]
         assert not session.query(User).get(buy_req["user_id"]).can_buy
 
     seller = create_user("3", can_buy=False, can_sell=False)
@@ -99,7 +99,7 @@ def test_reject_request():
         request_id=sell_req["id"], subject_id=admin["id"]
     )
     with session_scope() as session:
-        assert session.query(UserRequest).count() == 0
+        assert session.query(UserRequest).get(sell_req).closed_by_user_id == admin["id"]
         assert not session.query(User).get(sell_req["user_id"]).can_sell
 
 

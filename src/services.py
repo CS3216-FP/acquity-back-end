@@ -937,12 +937,18 @@ class UserRequestService:
             buy_requests = (
                 session.query(UserRequest, User)
                 .join(User, User.id == UserRequest.user_id)
-                .filter(UserRequest.is_buy == True)
+                .filter(
+                    UserRequest.is_buy == True, UserRequest.closed_by_user_id is None
+                )
                 .all()
             )
             sell_requests = (
                 session.query(UserRequest, User)
-                .join(User, User.id == UserRequest.user_id)
+                .join(
+                    User,
+                    User.id == UserRequest.user_id,
+                    UserRequest.closed_by_user_id is None,
+                )
                 .filter(UserRequest.is_buy == False)
                 .all()
             )
@@ -978,8 +984,9 @@ class UserRequestService:
                 raise InvisibleUnauthorizedException("Not committee")
 
             request = session.query(UserRequest).get(request_id)
-            user = session.query(User).get(request.user_id)
+            request.closed_by_user_id = subject_id
 
+            user = session.query(User).get(request.user_id)
             if request.is_buy:
                 user.can_buy = True
                 self.email_service.send_email(
@@ -991,8 +998,6 @@ class UserRequestService:
                     emails=[user.email], template="approved_seller"
                 )
 
-            session.delete(request)
-
     @validate_input({"request_id": UUID_RULE, "subject_id": UUID_RULE})
     def reject_request(self, request_id, subject_id):
         with session_scope() as session:
@@ -1000,10 +1005,8 @@ class UserRequestService:
                 raise InvisibleUnauthorizedException("Not committee")
 
             request = session.query(UserRequest).get(request_id)
+            request.closed_by_user_id = subject_id
+
             user = session.query(User).get(request.user_id)
-
             email_template = "rejected_buyer" if request.is_buy else "rejected_seller"
-
-            session.delete(request)
-
             self.email_service.send_email(emails=[user.email], template=email_template)
