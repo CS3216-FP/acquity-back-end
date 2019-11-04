@@ -867,7 +867,7 @@ class LinkedInLogin:
         token = self._get_token(code=code, redirect_uri=redirect_uri)
         user = self.get_linkedin_user(token["access_token"])
         UserService(self.config).create_if_not_exists(
-            **user, is_buy=is_buy, auth_token=token
+            **user, is_buy=is_buy, auth_token=token["access_token"]
         )
         return token
 
@@ -899,7 +899,7 @@ class LinkedInLogin:
         )
         json_res = res.json()
         if json_res.get("access_token") is None:
-            print(res)
+            print(res, json_res)
             raise UserProfileNotFoundException("Token retrieval failed.")
         return json_res
 
