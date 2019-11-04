@@ -16,7 +16,7 @@ def auth_required(f):
         header = request.headers.get("Authorization")
         if header is None or not header.startswith(PREFIX):
             raise InvalidAuthorizationTokenException("Invalid Authorization Bearer")
-        token = header[len(PREFIX):]
+        token = header[len(PREFIX) :]
         linkedin_user = request.app.linkedin_login.get_linkedin_user(token=token)
         user = request.app.user_service.get_user_by_linkedin_id(
             user_id=linkedin_user.get("user_id")
