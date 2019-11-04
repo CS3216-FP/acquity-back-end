@@ -47,7 +47,7 @@ class UserService:
         self.email_service = EmailService(config)
 
     def create_if_not_exists(
-        self, email, display_image_url, full_name, provider_user_id, is_buy
+        self, email, display_image_url, full_name, provider_user_id, is_buy, auth_token
     ):
         with session_scope() as session:
             user = (
@@ -64,11 +64,12 @@ class UserService:
                     can_buy=False,
                     can_sell=False,
                     provider_user_id=provider_user_id,
+                    auth_token=auth_token,
                 )
                 session.add(user)
                 session.flush()
 
-                req = UserRequest(provider_user_id=str(user.id), is_buy=is_buy)
+                req = UserRequest(user_id=str(user.id), is_buy=is_buy)
                 session.add(req)
 
                 email_template = "register_buyer" if is_buy else "register_seller"
@@ -85,6 +86,7 @@ class UserService:
                 user.email = email
                 user.full_name = full_name
                 user.display_image_url = display_image_url
+                user.auth_token = auth_token
 
             session.commit()
             return user.asdict()
@@ -864,10 +866,21 @@ class LinkedInLogin:
         is_buy = user_type == "buyer"
         token = self._get_token(code=code, redirect_uri=redirect_uri)
         user = self.get_linkedin_user(token["access_token"])
-        UserService(self.config).create_if_not_exists(**user, is_buy=is_buy)
+        UserService(self.config).create_if_not_exists(
+            **user, is_buy=is_buy, auth_token=token
+        )
         return token
 
     def get_linkedin_user(self, token):
+        with session_scope() as session:
+            users = [
+                u.asdict()
+                for u in session.query(User).filter_by(auth_token=token).all()
+            ]
+
+            if len(users) == 1:
+                return users[0]
+
         user_profile = self._get_user_profile(token=token)
         email = self._get_user_email(token=token)
         return {**user_profile, "email": email}
