@@ -16,7 +16,7 @@ def test_create__is_buy():
     user_params = {
         "email": "a@a.io",
         "full_name": "Ben",
-        "user_id": "testing",
+        "provider_user_id": "testing",
         "display_image_url": "http://blah",
         "is_buy": True,
     }
@@ -44,7 +44,7 @@ def test_create__is_sell():
     user_params = {
         "email": "a@a.io",
         "full_name": "Ben",
-        "user_id": "testing",
+        "provider_user_id": "testing",
         "display_image_url": "http://blah",
         "is_buy": False,
     }
@@ -72,7 +72,7 @@ def test_create__user_exists():
     user_params = {
         "email": "a@a.io",
         "full_name": "Ben",
-        "user_id": "testing",
+        "provider_user_id": "testing",
         "display_image_url": "http://blah",
         "is_buy": True,
     }
@@ -100,16 +100,16 @@ def test_create__user_exists():
 
 
 def test_get_user_by_linkedin_id():
-    user_params = create_user(user_id="abcdef")
+    user_params = create_user(provider_user_id="abcdef")
 
-    user = user_service.get_user_by_linkedin_id(user_id="abcdef")
+    user = user_service.get_user_by_linkedin_id(provider_user_id="abcdef")
     assert user_params == user
 
 
 def test_get_user():
     user_params = create_user()
 
-    user_id = user_service.get_user_by_linkedin_id(user_id="abcdef")["id"]
+    user_id = user_service.get_user_by_linkedin_id(provider_user_id="abcdef")["id"]
 
     user = user_service.get_user(id=user_id)
 

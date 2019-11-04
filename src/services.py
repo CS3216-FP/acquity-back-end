@@ -47,10 +47,14 @@ class UserService:
         self.email_service = EmailService(config)
 
     def create_if_not_exists(
-        self, email, display_image_url, full_name, user_id, is_buy
+        self, email, display_image_url, full_name, provider_user_id, is_buy
     ):
         with session_scope() as session:
-            user = session.query(User).filter_by(user_id=user_id).one_or_none()
+            user = (
+                session.query(User)
+                .filter_by(provider_user_id=provider_user_id)
+                .one_or_none()
+            )
             if user is None:
                 user = User(
                     email=email,
@@ -59,12 +63,12 @@ class UserService:
                     provider="linkedin",
                     can_buy=False,
                     can_sell=False,
-                    user_id=user_id,
+                    provider_user_id=provider_user_id,
                 )
                 session.add(user)
                 session.flush()
 
-                req = UserRequest(user_id=str(user.id), is_buy=is_buy)
+                req = UserRequest(provider_user_id=str(user.id), is_buy=is_buy)
                 session.add(req)
 
                 email_template = "register_buyer" if is_buy else "register_seller"
@@ -94,9 +98,13 @@ class UserService:
             user_dict = user.asdict()
         return user_dict
 
-    def get_user_by_linkedin_id(self, user_id):
+    def get_user_by_linkedin_id(self, provider_user_id):
         with session_scope() as session:
-            user = session.query(User).filter_by(user_id=user_id).one_or_none()
+            user = (
+                session.query(User)
+                .filter_by(provider_user_id=provider_user_id)
+                .one_or_none()
+            )
             if user is None:
                 raise ResourceNotFoundException()
             user_dict = user.asdict()
@@ -891,7 +899,7 @@ class LinkedInLogin:
         if user_profile_request.status_code == 401:
             raise UserProfileNotFoundException("User profile not found.")
         user_profile_data = user_profile_request.json()
-        user_id = user_profile_data.get("id")
+        provider_user_id = user_profile_data.get("id")
         first_name = user_profile_data.get("firstName").get("localized").get("en_US")
         last_name = user_profile_data.get("lastName").get("localized").get("en_US")
         try:
@@ -908,7 +916,7 @@ class LinkedInLogin:
         return {
             "full_name": f"{first_name} {last_name}",
             "display_image_url": display_image_url,
-            "user_id": user_id,
+            "provider_user_id": provider_user_id,
         }
 
     @staticmethod
@@ -944,12 +952,10 @@ class UserRequestService:
             )
             sell_requests = (
                 session.query(UserRequest, User)
-                .join(
-                    User,
-                    User.id == UserRequest.user_id,
-                    UserRequest.closed_by_user_id is None,
+                .join(User, User.id == UserRequest.user_id)
+                .filter(
+                    UserRequest.is_buy == False, UserRequest.closed_by_user_id is None
                 )
-                .filter(UserRequest.is_buy == False)
                 .all()
             )
             return {
