@@ -836,6 +836,7 @@ class ChatRoomService:
                     )
                 )
         return sorted(data, key=lambda item: item["updated_at"], reverse=True)
+
     def get_other_party_details(self, chat_room_id, user_id):
         with session_scope() as session:
             chat_room = session.query(ChatRoom).get(chat_room_id).asdict()
