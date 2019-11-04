@@ -32,6 +32,7 @@ def attributes_for_user(id="", **kwargs):
         "can_sell": True,
         "is_committee": True,
         "provider": f"{id}",
+        "auth_token": None,
         **kwargs,
     }
 
@@ -160,6 +161,7 @@ def create_user_request(id=0, **kwargs):
                 {
                     "user_id": lambda: create_user(str(id))["id"],
                     "is_buy": lambda: False,
+                    "closed_by_user_id": lambda: None,
                 },
             )
         )

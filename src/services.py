@@ -124,7 +124,7 @@ class SellOrderService:
             user = session.query(User).get(user_id)
             if user is None:
                 raise ResourceNotFoundException()
-            if not user.can_sell:
+            if user.asdict()["can_sell"] == "NO":
                 raise UnauthorizedException("User cannot place sell orders.")
 
             sell_order_count = (
@@ -221,7 +221,7 @@ class BuyOrderService:
             user = session.query(User).get(user_id)
             if user is None:
                 raise ResourceNotFoundException()
-            if not user.can_buy:
+            if user.asdict()["can_buy"] == "NO":
                 raise UnauthorizedException("User cannot place buy orders.")
 
             buy_order_count = session.query(BuyOrder).filter_by(user_id=user_id).count()
@@ -959,7 +959,7 @@ class UserRequestService:
                 session.query(UserRequest, User)
                 .join(User, User.id == UserRequest.user_id)
                 .filter(
-                    UserRequest.is_buy == True, UserRequest.closed_by_user_id is None
+                    UserRequest.is_buy == True, UserRequest.closed_by_user_id == None
                 )
                 .all()
             )
@@ -967,7 +967,7 @@ class UserRequestService:
                 session.query(UserRequest, User)
                 .join(User, User.id == UserRequest.user_id)
                 .filter(
-                    UserRequest.is_buy == False, UserRequest.closed_by_user_id is None
+                    UserRequest.is_buy == False, UserRequest.closed_by_user_id == None
                 )
                 .all()
             )

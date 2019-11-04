@@ -14,8 +14,12 @@ def test_get_requests():
     buyer = create_user("2")
     seller = create_user("3")
 
-    buyer_request = create_user_request(user_id=buyer["id"], is_buy=True)
-    seller_request = create_user_request(user_id=seller["id"], is_buy=False)
+    buyer_request = create_user_request(
+        user_id=buyer["id"], is_buy=True, closed_by_user_id=None
+    )
+    seller_request = create_user_request(
+        user_id=seller["id"], is_buy=False, closed_by_user_id=None
+    )
 
     reqs = user_request_service.get_requests(subject_id=admin["id"])
 

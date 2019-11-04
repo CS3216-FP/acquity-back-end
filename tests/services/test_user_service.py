@@ -19,6 +19,7 @@ def test_create__is_buy():
         "provider_user_id": "testing",
         "display_image_url": "http://blah",
         "is_buy": True,
+        "auth_token": None,
     }
 
     committee_email = create_user(is_committee=True)["email"]
@@ -47,6 +48,7 @@ def test_create__is_sell():
         "provider_user_id": "testing",
         "display_image_url": "http://blah",
         "is_buy": False,
+        "auth_token": None,
     }
 
     committee_email = create_user(is_committee=True)["email"]
@@ -75,6 +77,7 @@ def test_create__user_exists():
         "provider_user_id": "testing",
         "display_image_url": "http://blah",
         "is_buy": True,
+        "auth_token": None,
     }
     with patch("src.services.EmailService.send_email"):
         user_service.create_if_not_exists(
