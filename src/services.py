@@ -2,8 +2,8 @@ from collections import defaultdict
 from datetime import datetime, timezone
 
 import requests
-from sqlalchemy.sql import func
 from sqlalchemy import exc
+from sqlalchemy.sql import func
 
 from src.database import (
     BannedPair,
@@ -759,7 +759,9 @@ class ChatService:
 
             return {
                 "chat_room_id": chat_room_id,
-                "is_archived": chat_room.get("is_archived_seller") if user_type=="seller" else chat_room.get("is_archived_buyer"),
+                "is_archived": chat_room.get("is_archived_seller")
+                if user_type == "seller"
+                else chat_room.get("is_archived_buyer"),
                 "seller_price": sell_order.get("price"),
                 "seller_number_of_shares": sell_order.get("number_of_shares"),
                 "buyer_price": buy_order.get("price"),
@@ -823,13 +825,15 @@ class ChatRoomService:
             chat_room = session.query(ChatRoom).get(chat_room_id)
             if user_type == "seller" and chat_room.seller_id == user_id:
                 chat_room_id.is_archived_seller = True
-            elif user_type == "buyer"  and chat_room.buyer_id == user_id:
+            elif user_type == "buyer" and chat_room.buyer_id == user_id:
                 chat_room_id.is_archived_buyer = True
             else:
                 raise ResourceNotFoundException("Wrong user type")
             return {
                 "chat_room_id": chat_room_id,
-                "is_archived": chat_room.get("is_archived_seller") if user_type=="seller" else chat_room.get("is_archived_buyer"),
+                "is_archived": chat_room.get("is_archived_seller")
+                if user_type == "seller"
+                else chat_room.get("is_archived_buyer"),
             }
 
     def get_chat_rooms(self, user_id, user_type):
@@ -881,7 +885,9 @@ class ChatRoomService:
         return {
             "chat_room_id": chat_room.get("id"),
             "is_deal_closed": chat_room.get("is_deal_closed"),
-            "is_archived": chat_room.get("is_archived_seller") if user_type=="seller" else chat_room.get("is_archived_buyer"),
+            "is_archived": chat_room.get("is_archived_seller")
+            if user_type == "seller"
+            else chat_room.get("is_archived_buyer"),
             "seller_price": sell_order.get("price"),
             "seller_number_of_shares": sell_order.get("number_of_shares"),
             "buyer_price": buy_order.get("price"),

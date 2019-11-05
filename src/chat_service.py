@@ -1,18 +1,17 @@
 import socketio
 
+from src.exceptions import (
+    InvalidRequestException,
+    ResourceNotFoundException,
+    ResourceNotOwnedException,
+    UserProfileNotFoundException,
+)
 from src.services import (
     ChatRoomService,
     ChatService,
     LinkedInLogin,
     OfferService,
     UserService,
-)
-
-from src.exceptions import (
-    ResourceNotFoundException,
-    ResourceNotOwnedException,
-    UserProfileNotFoundException,
-    InvalidRequestException,
 )
 
 
@@ -56,11 +55,11 @@ class ChatSocketService(socketio.AsyncNamespace):
             )
             await self.emit("res_chat_rooms", rooms, room=user_id)
         except (UserProfileNotFoundException, ResourceNotFoundException) as e:
-            await self.emit("err_conversation", {
-                "status_code": e.status_code,
-                "message": e.message,
-            }, room=user_id)
-
+            await self.emit(
+                "err_conversation",
+                {"status_code": e.status_code, "message": e.message},
+                room=user_id,
+            )
 
     async def on_req_conversation(self, sid, data):
         try:
@@ -72,10 +71,11 @@ class ChatSocketService(socketio.AsyncNamespace):
             )
             await self.emit("res_conversation", conversation, room=user_id)
         except (ResourceNotFoundException, UserProfileNotFoundException) as e:
-            await self.emit("err_conversation", {
-                "status_code": e.status_code,
-                "message": e.message,
-            }, room=user_id)
+            await self.emit(
+                "err_conversation",
+                {"status_code": e.status_code, "message": e.message},
+                room=user_id,
+            )
 
     async def on_req_archive(self, sid, data):
         try:
@@ -88,10 +88,11 @@ class ChatSocketService(socketio.AsyncNamespace):
             )
             await self.emit("res_archive", archive, room=user_id)
         except (ResourceNotFoundException, UserProfileNotFoundException) as e:
-            await self.emit("err_conversation", {
-                "status_code": e.status_code,
-                "message": e.message,
-            }, room=user_id)
+            await self.emit(
+                "err_conversation",
+                {"status_code": e.status_code, "message": e.message},
+                room=user_id,
+            )
 
     async def on_req_new_message(self, sid, data):
         try:
@@ -104,11 +105,16 @@ class ChatSocketService(socketio.AsyncNamespace):
                 user_type=data.get("user_type"),
             )
             await self.emit("res_new_message", chat, room=room_id)
-        except (ResourceNotFoundException, UserProfileNotFoundException, ResourceNotOwnedException) as e:
-            await self.emit("err_conversation", {
-                "status_code": e.status_code,
-                "message": e.message,
-            }, room=user_id)
+        except (
+            ResourceNotFoundException,
+            UserProfileNotFoundException,
+            ResourceNotOwnedException,
+        ) as e:
+            await self.emit(
+                "err_conversation",
+                {"status_code": e.status_code, "message": e.message},
+                room=user_id,
+            )
 
     async def on_req_new_offer(self, sid, data):
         try:
@@ -122,11 +128,17 @@ class ChatSocketService(socketio.AsyncNamespace):
                 user_type=data.get("user_type"),
             )
             await self.emit("res_new_offer", offer, room=room_id)
-        except (ResourceNotFoundException, UserProfileNotFoundException, ResourceNotOwnedException, InvalidRequestException) as e:
-            await self.emit("err_conversation", {
-                "status_code": e.status_code,
-                "message": e.message,
-            }, room=user_id)
+        except (
+            ResourceNotFoundException,
+            UserProfileNotFoundException,
+            ResourceNotOwnedException,
+            InvalidRequestException,
+        ) as e:
+            await self.emit(
+                "err_conversation",
+                {"status_code": e.status_code, "message": e.message},
+                room=user_id,
+            )
 
     async def on_req_accept_offer(self, sid, data):
         try:
@@ -139,11 +151,17 @@ class ChatSocketService(socketio.AsyncNamespace):
                 user_type=data.get("user_type"),
             )
             await self.emit("res_accept_offer", offer, room=room_id)
-        except (ResourceNotFoundException, UserProfileNotFoundException, ResourceNotOwnedException, InvalidRequestException) as e:
-            await self.emit("err_conversation", {
-                "status_code": e.status_code,
-                "message": e.message,
-            }, room=user_id)
+        except (
+            ResourceNotFoundException,
+            UserProfileNotFoundException,
+            ResourceNotOwnedException,
+            InvalidRequestException,
+        ) as e:
+            await self.emit(
+                "err_conversation",
+                {"status_code": e.status_code, "message": e.message},
+                room=user_id,
+            )
 
     async def on_req_decline_offer(self, sid, data):
         try:
@@ -156,11 +174,17 @@ class ChatSocketService(socketio.AsyncNamespace):
                 user_type=data.get("user_type"),
             )
             await self.emit("res_decline_offer", offer, room=room_id)
-        except (ResourceNotFoundException, UserProfileNotFoundException, ResourceNotOwnedException, InvalidRequestException) as e:
-            await self.emit("err_conversation", {
-                "status_code": e.status_code,
-                "message": e.message,
-            }, room=user_id)
+        except (
+            ResourceNotFoundException,
+            UserProfileNotFoundException,
+            ResourceNotOwnedException,
+            InvalidRequestException,
+        ) as e:
+            await self.emit(
+                "err_conversation",
+                {"status_code": e.status_code, "message": e.message},
+                room=user_id,
+            )
 
     async def on_req_other_party_details(self, sid, data):
         user_id = await self._authenticate(token=data.get("token"))
