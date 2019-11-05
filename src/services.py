@@ -3,6 +3,7 @@ from datetime import datetime, timezone
 
 import requests
 from sqlalchemy.sql import func
+from sqlalchemy import exc
 
 from src.database import (
     BannedPair,
@@ -728,7 +729,10 @@ class ChatService:
 
     def get_conversation(self, user_id, chat_room_id, user_type):
         with session_scope() as session:
-            chat_room = session.query(ChatRoom).get(chat_room_id)
+            try:
+                chat_room = session.query(ChatRoom).get(chat_room_id)
+            except exc.DataError:
+                raise ResourceNotFoundException("Chat room not found")
             if chat_room is None:
                 raise ResourceNotFoundException("Chat room not found")
             ChatService._verify_user(
@@ -755,6 +759,7 @@ class ChatService:
 
             return {
                 "chat_room_id": chat_room_id,
+                "is_archived": chat_room.get("is_archived_seller") if user_type=="seller" else chat_room.get("is_archived_buyer"),
                 "seller_price": sell_order.get("price"),
                 "seller_number_of_shares": sell_order.get("number_of_shares"),
                 "buyer_price": buy_order.get("price"),
@@ -813,6 +818,20 @@ class ChatRoomService:
     def __init__(self, config):
         self.config = config
 
+    def archive_chat_room(self, user_id, chat_room_id, is_archived, user_type):
+        with session_scope() as session:
+            chat_room = session.query(ChatRoom).get(chat_room_id)
+            if user_type == "seller" and chat_room.seller_id == user_id:
+                chat_room_id.is_archived_seller = True
+            elif user_type == "buyer"  and chat_room.buyer_id == user_id:
+                chat_room_id.is_archived_buyer = True
+            else:
+                raise ResourceNotFoundException("Wrong user type")
+            return {
+                "chat_room_id": chat_room_id,
+                "is_archived": chat_room.get("is_archived_seller") if user_type=="seller" else chat_room.get("is_archived_buyer"),
+            }
+
     def get_chat_rooms(self, user_id, user_type):
         data = []
         with session_scope() as session:
@@ -834,6 +853,7 @@ class ChatRoomService:
                         chat_room=result[0].asdict(),
                         buy_order=result[1].asdict(),
                         sell_order=result[2].asdict(),
+                        user_type=user_type,
                     )
                 )
         return sorted(data, key=lambda item: item["updated_at"], reverse=True)
@@ -857,10 +877,11 @@ class ChatRoomService:
             return {k: user[k] for k in ["email", "full_name"]}
 
     @staticmethod
-    def _serialize_chat_room(chat_room, buy_order, sell_order):
+    def _serialize_chat_room(chat_room, buy_order, sell_order, user_type):
         return {
             "chat_room_id": chat_room.get("id"),
             "is_deal_closed": chat_room.get("is_deal_closed"),
+            "is_archived": chat_room.get("is_archived_seller") if user_type=="seller" else chat_room.get("is_archived_buyer"),
             "seller_price": sell_order.get("price"),
             "seller_number_of_shares": sell_order.get("number_of_shares"),
             "buyer_price": buy_order.get("price"),

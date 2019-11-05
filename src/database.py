@@ -188,6 +188,8 @@ class ChatRoom(Base):
     buyer_id = Column(UUID, ForeignKey("users.id"), nullable=False)
     is_deal_closed = Column(Boolean, nullable=False, server_default="f")
     is_revealed = Column(Boolean, nullable=False, server_default="f")
+    is_archived_buyer = Column(Boolean, nullable=False, server_default="f")
+    is_archived_seller = Column(Boolean, nullable=False, server_default="f")
 
     __table_args__ = (UniqueConstraint("seller_id", "buyer_id"),)
 
