@@ -705,7 +705,6 @@ class ChatService:
                 session=session, chat_room=chat_room, message=message
             )
 
-            chat_room.buyer_id == author_id
             return ChatService._serialize_chat_message(
                 chat_room_id=chat_room_id,
                 message=message,
