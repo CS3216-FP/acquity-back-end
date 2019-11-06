@@ -56,7 +56,7 @@ class ChatSocketService(socketio.AsyncNamespace):
             await self.emit("res_chat_rooms", rooms, room=user_id)
         except (UserProfileNotFoundException, ResourceNotFoundException) as e:
             await self.emit(
-                "err_conversation",
+                "err_chat_rooms",
                 {"status_code": e.status_code, "message": e.message},
                 room=sid,
             )
@@ -111,7 +111,7 @@ class ChatSocketService(socketio.AsyncNamespace):
             ResourceNotOwnedException,
         ) as e:
             await self.emit(
-                "err_conversation",
+                "err_new_message",
                 {"status_code": e.status_code, "message": e.message},
                 room=sid,
             )
@@ -135,7 +135,7 @@ class ChatSocketService(socketio.AsyncNamespace):
             InvalidRequestException,
         ) as e:
             await self.emit(
-                "err_conversation",
+                "err_new_offer",
                 {"status_code": e.status_code, "message": e.message},
                 room=sid,
             )
@@ -158,7 +158,7 @@ class ChatSocketService(socketio.AsyncNamespace):
             InvalidRequestException,
         ) as e:
             await self.emit(
-                "err_conversation",
+                "err_accept_offer",
                 {"status_code": e.status_code, "message": e.message},
                 room=sid,
             )
@@ -181,7 +181,7 @@ class ChatSocketService(socketio.AsyncNamespace):
             InvalidRequestException,
         ) as e:
             await self.emit(
-                "err_conversation",
+                "err_decline_offer",
                 {"status_code": e.status_code, "message": e.message},
                 room=sid,
             )
