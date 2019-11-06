@@ -58,7 +58,7 @@ class ChatSocketService(socketio.AsyncNamespace):
             await self.emit(
                 "err_conversation",
                 {"status_code": e.status_code, "message": e.message},
-                room=user_id,
+                room=sid,
             )
 
     async def on_req_conversation(self, sid, data):
@@ -74,12 +74,12 @@ class ChatSocketService(socketio.AsyncNamespace):
             await self.emit(
                 "err_conversation",
                 {"status_code": e.status_code, "message": e.message},
-                room=user_id,
+                room=sid,
             )
 
     async def on_req_archive(self, sid, data):
+        user_id = await self._authenticate(token=data.get("token"))
         try:
-            user_id = await self._authenticate(token=data.get("token"))
             archive = self.chat_room_service.archive_chat_room(
                 user_id=user_id,
                 chat_room_id=data.get("chat_room_id"),
@@ -89,9 +89,9 @@ class ChatSocketService(socketio.AsyncNamespace):
             await self.emit("res_archive", archive, room=user_id)
         except (ResourceNotFoundException, UserProfileNotFoundException) as e:
             await self.emit(
-                "err_conversation",
+                "err_archive",
                 {"status_code": e.status_code, "message": e.message},
-                room=user_id,
+                room=sid,
             )
 
     async def on_req_new_message(self, sid, data):
@@ -113,7 +113,7 @@ class ChatSocketService(socketio.AsyncNamespace):
             await self.emit(
                 "err_conversation",
                 {"status_code": e.status_code, "message": e.message},
-                room=user_id,
+                room=sid,
             )
 
     async def on_req_new_offer(self, sid, data):
@@ -137,7 +137,7 @@ class ChatSocketService(socketio.AsyncNamespace):
             await self.emit(
                 "err_conversation",
                 {"status_code": e.status_code, "message": e.message},
-                room=user_id,
+                room=sid,
             )
 
     async def on_req_accept_offer(self, sid, data):
@@ -160,7 +160,7 @@ class ChatSocketService(socketio.AsyncNamespace):
             await self.emit(
                 "err_conversation",
                 {"status_code": e.status_code, "message": e.message},
-                room=user_id,
+                room=sid,
             )
 
     async def on_req_decline_offer(self, sid, data):
@@ -183,7 +183,7 @@ class ChatSocketService(socketio.AsyncNamespace):
             await self.emit(
                 "err_conversation",
                 {"status_code": e.status_code, "message": e.message},
-                room=user_id,
+                room=sid,
             )
 
     async def on_req_other_party_details(self, sid, data):

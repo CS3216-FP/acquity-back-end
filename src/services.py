@@ -824,11 +824,13 @@ class ChatRoomService:
         with session_scope() as session:
             chat_room = session.query(ChatRoom).get(chat_room_id)
             if user_type == "seller" and chat_room.seller_id == user_id:
-                chat_room_id.is_archived_seller = True
+                chat_room.is_archived_seller = not is_archived
             elif user_type == "buyer" and chat_room.buyer_id == user_id:
-                chat_room_id.is_archived_buyer = True
+                chat_room.is_archived_buyer = not is_archived
             else:
                 raise ResourceNotFoundException("Wrong user type")
+            session.flush()
+            chat_room = chat_room.asdict()
             return {
                 "chat_room_id": chat_room_id,
                 "is_archived": chat_room.get("is_archived_seller")
