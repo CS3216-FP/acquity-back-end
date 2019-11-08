@@ -27,14 +27,14 @@ def seed_db():
                 "provider_user_id": "UiYX0uP7Cf",
             },
             {
-                "email": "brandon.ng10@yahoo.com.sg",
+                "email": "mail@herbert.id",
                 "provider": "linkedin",
-                "full_name": "Brandon Ng",
+                "full_name": "Herbert Ilhan Tanujaya",
                 "display_image_url": None,
                 "can_buy": True,
                 "can_sell": True,
                 "is_committee": True,
-                "provider_user_id": "8tJpx5jWUx",
+                "provider_user_id": "zKVBvmoRHn",
             },
         ]
         for user in user_seeds:
@@ -58,7 +58,7 @@ def seed_db():
             .id
         )
         brandon_yahoo_id = (
-            session.query(User).filter_by(email="brandon.ng10@yahoo.com.sg").first().id
+            session.query(User).filter_by(email="mail@herbert.id").first().id
         )
 
         # create chatrooms
