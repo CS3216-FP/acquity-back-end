@@ -456,11 +456,14 @@ class MatchService:
         with session_scope() as session:
             for buy_order_id, sell_order_id in match_results:
                 match = Match(buy_order_id=buy_order_id, sell_order_id=sell_order_id)
+                session.add(match)
+                session.flush()
                 chat_room = ChatRoom(
                     seller_id=sell_order_to_seller_dict[sell_order_id],
                     buyer_id=buy_order_to_buyer_dict[buy_order_id],
+                    match_id=match.asdict()["id"],
                 )
-                session.add_all([match, chat_room])
+                session.add(chat_room)
 
             session.query(Round).get(round_id).is_concluded = True
 
