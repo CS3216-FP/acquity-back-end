@@ -824,7 +824,7 @@ class ChatRoomService:
                 user_id=user_id,
                 user_type=user_type,
                 session=session,
-                is_archived=is_archived
+                is_archived=is_archived,
             )
             for result in results:
                 data.append(
@@ -873,7 +873,9 @@ class ChatRoomService:
 
     @staticmethod
     def _filter_chat_rooms_by_archive(user_id, user_type, session, is_archived):
-        user_type_queries = ChatRoomService._get_user_type_filter(user_type=user_type, user_id=user_id)
+        user_type_queries = ChatRoomService._get_user_type_filter(
+            user_type=user_type, user_id=user_id
+        )
         archive_queries = ChatRoomService._get_archive_filter(is_archived=is_archived)
         results = (
             session.query(ChatRoom, BuyOrder, SellOrder)

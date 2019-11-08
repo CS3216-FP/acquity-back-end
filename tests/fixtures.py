@@ -3,13 +3,12 @@ from datetime import datetime, timedelta
 from src.database import (
     BannedPair,
     BuyOrder,
+    ChatRoom,
     Match,
     Round,
     Security,
     SellOrder,
     User,
-    ChatRoom,
-    ArchivedChatRoom,
     UserRequest,
     session_scope,
 )
@@ -62,10 +61,10 @@ def attributes_for_round(id=0, **kwargs):
         **kwargs,
     }
 
+
 def attributes_for_chat_room(id=0, **kwargs):
-    return {
-        **kwargs,
-    }
+    return {**kwargs}
+
 
 def create_user(id="", **kwargs):
     with session_scope() as session:
@@ -157,6 +156,7 @@ def create_banned_pair(id=0, **kwargs):
         session.add(banned_pair)
         session.commit()
         return banned_pair.asdict()
+
 
 def create_chatrooms(id="", **kwargs):
     with session_scope() as session:

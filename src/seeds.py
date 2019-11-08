@@ -52,7 +52,10 @@ def seed_db():
                     )
                 )
         brandon_gmail_id = (
-            session.query(User).filter_by(email="nwjbrandon.ochemmaster@gmail.com").first().id
+            session.query(User)
+            .filter_by(email="nwjbrandon.ochemmaster@gmail.com")
+            .first()
+            .id
         )
         brandon_yahoo_id = (
             session.query(User).filter_by(email="brandon.ng10@yahoo.com.sg").first().id
