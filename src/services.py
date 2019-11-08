@@ -71,8 +71,11 @@ class UserService:
                 session.add(user)
                 session.flush()
 
-                req = UserRequest(user_id=str(user.id), is_buy=is_buy)
-                session.add(req)
+                buy_req = UserRequest(user_id=str(user.id), is_buy=True)
+                session.add(buy_req)
+                if not is_buy:
+                    sell_req = UserRequest(user_id=str(user.id), is_buy=False)
+                    session.add(sell_req)
 
                 email_template = "register_buyer" if is_buy else "register_seller"
                 self.email_service.send_email(emails=[email], template=email_template)
@@ -859,8 +862,10 @@ class ChatRoomService:
         with session_scope() as session:
             chat_room = session.query(ChatRoom).get(chat_room_id).asdict()
 
-        if not chat_room["is_revealed"]:
-            raise ResourceNotOwnedException("Other party has not revealed.")
+        if not (chat_room["is_buyer_revealed"] and chat_room["is_seller_revealed"]):
+            raise ResourceNotOwnedException(
+                "Both parties have not revealed their information."
+            )
 
         if chat_room["seller_id"] == user_id:
             other_party_user_id = chat_room["buyer_id"]
@@ -872,6 +877,21 @@ class ChatRoomService:
         with session_scope() as session:
             user = session.query(User).get(other_party_user_id).asdict()
             return {k: user[k] for k in ["email", "full_name"]}
+
+    def reveal_identity(self, chat_room_id, user_id):
+        with session_scope() as session:
+            chat_room = session.query(ChatRoom).get(chat_room_id)
+
+            if user_id not in (chat_room.seller_id, chat_room.buyer_id):
+                raise ResourceNotOwnedException("Wrong user.")
+
+            if not chat_room.is_deal_closed:
+                raise UnauthorizedException("Need to have an accepted offer.")
+
+            if chat_room.seller_id == user_id:
+                chat_room.is_seller_revealed = True
+            elif chat_room.buyer_id == user_id:
+                chat_room.is_buyer_revealed = True
 
     @staticmethod
     def _get_archived_rooms(user_id, user_type, archived_room, session):
@@ -910,6 +930,7 @@ class ChatRoomService:
     def _serialize_chat_room(chat_room, buy_order, sell_order):
         return {
             "chat_room_id": chat_room.get("id"),
+            "friendly_name": chat_room.get("friendly_name"),
             "is_deal_closed": chat_room.get("is_deal_closed"),
             "seller_price": sell_order.get("price"),
             "seller_number_of_shares": sell_order.get("number_of_shares"),
@@ -954,7 +975,7 @@ class LinkedInLogin:
             if len(users) == 1:
                 return users[0]
 
-        user_profile = self._get_user_profile(token=token)
+        user_profile = self.get_user_profile(token=token)
         email = self._get_user_email(token=token)
         return {**user_profile, "email": email}
 
@@ -977,7 +998,7 @@ class LinkedInLogin:
         return json_res
 
     @staticmethod
-    def _get_user_profile(token):
+    def get_user_profile(token):
         user_profile_request = requests.get(
             "https://api.linkedin.com/v2/me?projection=(id,firstName,lastName,profilePicture(displayImage~:playableStreams))",
             headers={"Authorization": f"Bearer {token}"},
