@@ -197,14 +197,8 @@ class ChatRoom(Base):
     __table_args__ = (UniqueConstraint("seller_id", "buyer_id"),)
 
 
-class ArchivedBuyerChatRoom(Base):
-    __tablename__ = "archived_buyer_chat_rooms"
-    user_id = Column(UUID, ForeignKey("users.id"), nullable=False)
-    chat_room_id = Column(UUID, ForeignKey("chat_rooms.id"), nullable=False)
-
-
-class ArchivedSellerChatRoom(Base):
-    __tablename__ = "archived_seller_chat_rooms"
+class ArchivedChatRoom(Base):
+    __tablename__ = "archived_chat_rooms"
     user_id = Column(UUID, ForeignKey("users.id"), nullable=False)
     chat_room_id = Column(UUID, ForeignKey("chat_rooms.id"), nullable=False)
 
