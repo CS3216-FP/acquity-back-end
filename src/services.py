@@ -879,9 +879,9 @@ class ChatRoomService:
         archive_queries = ChatRoomService._get_archive_filter(is_archived=is_archived)
         results = (
             session.query(ChatRoom, BuyOrder, SellOrder)
-            .filter(*user_type_queries)
+            .filter(user_type_queries)
             .outerjoin(ArchivedChatRoom, ChatRoom.id == ArchivedChatRoom.chat_room_id)
-            .filter(*archive_queries)
+            .filter(archive_queries)
             .outerjoin(BuyOrder, ChatRoom.buyer_id == BuyOrder.user_id)
             .outerjoin(SellOrder, ChatRoom.seller_id == SellOrder.user_id)
             .all()
@@ -891,16 +891,16 @@ class ChatRoomService:
     @staticmethod
     def _get_user_type_filter(user_type, user_id):
         if user_type == "buyer":
-            return [ChatRoom.buyer_id == user_id]
+            return ChatRoom.buyer_id == user_id
         else:
-            return [ChatRoom.seller_id == user_id]
+            return ChatRoom.seller_id == user_id
 
     @staticmethod
     def _get_archive_filter(is_archived):
         if is_archived:
-            return [ArchivedChatRoom.user_id.isnot(None)]
+            return ArchivedChatRoom.user_id.isnot(None)
         else:
-            return [ArchivedChatRoom.user_id.is_(None)]
+            return ArchivedChatRoom.user_id.is_(None)
 
     @staticmethod
     def _serialize_chat_room(chat_room, buy_order, sell_order):

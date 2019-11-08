@@ -158,7 +158,7 @@ def create_banned_pair(id=0, **kwargs):
         return banned_pair.asdict()
 
 
-def create_chatrooms(id="", **kwargs):
+def create_chatroom(id="", **kwargs):
     with session_scope() as session:
         chat_room = ChatRoom(**attributes_for_chat_room(id, **kwargs))
         session.add(chat_room)
