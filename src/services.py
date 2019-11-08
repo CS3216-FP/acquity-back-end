@@ -5,6 +5,8 @@ import requests
 from sqlalchemy.sql import func
 
 from src.database import (
+    ArchivedBuyerChatRoom,
+    ArchivedSellerChatRoom,
     BannedPair,
     BuyOrder,
     Chat,
@@ -16,8 +18,6 @@ from src.database import (
     SellOrder,
     User,
     UserRequest,
-    ArchivedBuyerChatRoom,
-    ArchivedSellerChatRoom,
     session_scope,
 )
 from src.email_service import EmailService
@@ -824,29 +824,33 @@ class ChatRoomService:
             results = []
             if user_type == "seller" and is_archived:
                 results = ChatRoomService._get_archived_rooms(
-                    user_id=user_id, 
+                    user_id=user_id,
                     user_type=user_type,
                     archived_room=ArchivedSellerChatRoom,
-                    session=session)
+                    session=session,
+                )
             if user_type == "buyer" and is_archived:
                 results = ChatRoomService._get_archived_rooms(
-                    user_id=user_id, 
+                    user_id=user_id,
                     user_type=user_type,
                     archived_room=ArchivedBuyerChatRoom,
-                    session=session)
+                    session=session,
+                )
 
             if user_type == "seller" and not is_archived:
                 results = ChatRoomService._get_non_archived_rooms(
-                        user_id=user_id, 
-                        user_type=user_type,
-                        archived_room=ArchivedSellerChatRoom,
-                        session=session)
+                    user_id=user_id,
+                    user_type=user_type,
+                    archived_room=ArchivedSellerChatRoom,
+                    session=session,
+                )
             if user_type == "buyer" and not is_archived:
                 results = ChatRoomService._get_non_archived_rooms(
-                        user_id=user_id, 
-                        user_type=user_type,
-                        archived_room=ArchivedBuyerChatRoom,
-                        session=session)
+                    user_id=user_id,
+                    user_type=user_type,
+                    archived_room=ArchivedBuyerChatRoom,
+                    session=session,
+                )
 
             for result in results:
                 data.append(
@@ -895,7 +899,9 @@ class ChatRoomService:
 
     @staticmethod
     def _get_archived_rooms(user_id, user_type, archived_room, session):
-        queries = ChatRoomService._get_user_type_filter(user_type=user_type, user_id=user_id)
+        queries = ChatRoomService._get_user_type_filter(
+            user_type=user_type, user_id=user_id
+        )
         results = (
             session.query(ChatRoom, BuyOrder, SellOrder)
             .filter(*queries)
@@ -909,7 +915,9 @@ class ChatRoomService:
 
     @staticmethod
     def _get_non_archived_rooms(user_id, user_type, archived_room, session):
-        queries = ChatRoomService._get_user_type_filter(user_type=user_type, user_id=user_id)
+        queries = ChatRoomService._get_user_type_filter(
+            user_type=user_type, user_id=user_id
+        )
         results = (
             session.query(ChatRoom, BuyOrder, SellOrder)
             .filter(*queries)
