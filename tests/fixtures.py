@@ -62,10 +62,6 @@ def attributes_for_round(id=0, **kwargs):
     }
 
 
-def attributes_for_chat_room(id=0, **kwargs):
-    return {**kwargs}
-
-
 def create_user(id="", **kwargs):
     with session_scope() as session:
         user = User(**attributes_for_user(id, **kwargs))
@@ -158,9 +154,9 @@ def create_banned_pair(id=0, **kwargs):
         return banned_pair.asdict()
 
 
-def create_chatroom(id="", **kwargs):
+def create_chatroom(**kwargs):
     with session_scope() as session:
-        chat_room = ChatRoom(**attributes_for_chat_room(id, **kwargs))
+        chat_room = ChatRoom(**kwargs)
         session.add(chat_room)
         session.commit()
         return chat_room.asdict()
