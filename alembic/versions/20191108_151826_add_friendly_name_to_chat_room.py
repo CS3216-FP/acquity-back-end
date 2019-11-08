@@ -1,7 +1,7 @@
 """Add friendly name to chat room
 
 Revision ID: 72565d05787b
-Revises: 85b11b1c3975
+Revises: 441896589af1
 Create Date: 2019-11-08 15:18:26.777623
 
 """
@@ -13,7 +13,7 @@ from src.utils import generate_friendly_name
 
 # revision identifiers, used by Alembic.
 revision = "72565d05787b"
-down_revision = "85b11b1c3975"
+down_revision = "441896589af1"
 branch_labels = None
 depends_on = None
 
