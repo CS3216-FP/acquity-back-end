@@ -16,6 +16,8 @@ from src.database import (
     SellOrder,
     User,
     UserRequest,
+    ArchivedBuyerChatRoom,
+    ArchivedSellerChatRoom,
     session_scope,
 )
 from src.email_service import EmailService
@@ -813,21 +815,36 @@ class ChatRoomService:
     def __init__(self, config):
         self.config = config
 
-    def get_chat_rooms(self, user_id, user_type):
+    def get_chat_rooms(self, user_id, user_type, is_archived):
         data = []
         with session_scope() as session:
-            queries = []
-            if user_type == "buyer":
-                queries.append(ChatRoom.buyer_id == user_id)
-            if user_type == "seller":
-                queries.append(ChatRoom.seller_id == user_id)
-            results = (
-                session.query(ChatRoom, BuyOrder, SellOrder)
-                .filter(*queries)
-                .outerjoin(BuyOrder, ChatRoom.buyer_id == BuyOrder.user_id)
-                .outerjoin(SellOrder, ChatRoom.seller_id == SellOrder.user_id)
-                .all()
-            )
+            results = []
+            if user_type == "seller" and is_archived:
+                results = ChatRoomService._get_archived_rooms(
+                    user_id=user_id, 
+                    user_type=user_type,
+                    archived_room=ArchivedSellerChatRoom,
+                    session=session)
+            if user_type == "buyer" and is_archived:
+                results = ChatRoomService._get_archived_rooms(
+                    user_id=user_id, 
+                    user_type=user_type,
+                    archived_room=ArchivedBuyerChatRoom,
+                    session=session)
+
+            if user_type == "seller" and not is_archived:
+                results = ChatRoomService._get_non_archived_rooms(
+                        user_id=user_id, 
+                        user_type=user_type,
+                        archived_room=ArchivedSellerChatRoom,
+                        session=session)
+            if user_type == "buyer" and not is_archived:
+                results = ChatRoomService._get_non_archived_rooms(
+                        user_id=user_id, 
+                        user_type=user_type,
+                        archived_room=ArchivedBuyerChatRoom,
+                        session=session)
+
             for result in results:
                 data.append(
                     ChatRoomService._serialize_chat_room(
@@ -855,6 +872,39 @@ class ChatRoomService:
         with session_scope() as session:
             user = session.query(User).get(other_party_user_id).asdict()
             return {k: user[k] for k in ["email", "full_name"]}
+
+    @staticmethod
+    def _get_archived_rooms(user_id, user_type, archived_room, session):
+        queries = ChatRoomService._get_user_type_filter(user_type=user_type, user_id=user_id)
+        results = (
+            session.query(ChatRoom, BuyOrder, SellOrder)
+            .filter(*queries)
+            .outerjoin(archived_room, ChatRoom.id == archived_room.chat_room_id)
+            .filter(archived_room.user_id.isnot(None))
+            .outerjoin(BuyOrder, ChatRoom.buyer_id == BuyOrder.user_id)
+            .outerjoin(SellOrder, ChatRoom.seller_id == SellOrder.user_id)
+            .all()
+        )
+        return results
+
+    @staticmethod
+    def _get_non_archived_rooms(user_id, user_type, archived_room, session):
+        queries = ChatRoomService._get_user_type_filter(user_type=user_type, user_id=user_id)
+        results = (
+            session.query(ChatRoom, BuyOrder, SellOrder)
+            .filter(*queries)
+            .outerjoin(archived_room, ChatRoom.id == archived_room.chat_room_id)
+            .filter(archived_room.user_id.is_(None))
+            .outerjoin(BuyOrder, ChatRoom.buyer_id == BuyOrder.user_id)
+            .outerjoin(SellOrder, ChatRoom.seller_id == SellOrder.user_id)
+            .all()
+        )
+        return results
+
+    @staticmethod
+    def _get_user_type_filter(user_type, user_id):
+        queries = [[ChatRoom.buyer_id == user_id], [ChatRoom.seller_id == user_id]]
+        return queries[0] if user_type == "buyer" else queries[1]
 
     @staticmethod
     def _serialize_chat_room(chat_room, buy_order, sell_order):
