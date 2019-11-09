@@ -130,6 +130,16 @@ class ChatSocketService(socketio.AsyncNamespace):
         )
         await self.emit("res_decline_offer", offer, room=room_id)
 
+    @handle_acquity_exceptions("err_archive_chatroom")
+    async def on_req_archive_chatroom(self, sid, data):
+        user_id = await self._authenticate(token=data.get("token"))
+        archived_result = self.chat_room_service.archive_room(
+            user_id=user_id,
+            chat_room_id=data.get("chat_room_id"),
+            is_archived=data.get("is_archived"),
+        )
+        await self.emit("res_archive_chatroom", archived_result, room=user_id)
+
     @handle_acquity_exceptions("err_reveal_identity")
     async def on_req_reveal_identity(self, sid, data):
         user_id = await self._authenticate(token=data.get("token"))
