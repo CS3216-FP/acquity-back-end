@@ -176,7 +176,7 @@ def seed_db():
                 ChatRoom(
                     buyer_id=str(brandon_yahoo_id),
                     seller_id=str(brandon_gmail_id),
-                    match_id=str(match_A),
+                    #match_id=str(match_A),
                 )
             )
         if (
@@ -187,7 +187,7 @@ def seed_db():
                 ChatRoom(
                     buyer_id=str(brandon_gmail_id),
                     seller_id=str(brandon_yahoo_id),
-                    match_id=str(match_B),
+                    #match_id=str(match_B),
                 )
             )
 
