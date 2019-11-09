@@ -461,7 +461,7 @@ class MatchService:
                 chat_room = ChatRoom(
                     seller_id=sell_order_to_seller_dict[sell_order_id],
                     buyer_id=buy_order_to_buyer_dict[buy_order_id],
-                    match_id=match.asdict()["id"],
+                    match_id=match.id,
                 )
                 session.add(chat_room)
 
