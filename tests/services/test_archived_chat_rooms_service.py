@@ -23,9 +23,7 @@ def test_create_archived_chat_room__buyer():
         buyer_id=buyer["id"], seller_id=seller["id"], match_id=match["id"]
     )
 
-    chat_room_service.archive_room(
-        user_id=buyer["id"], chat_room_id=chat_room["id"], is_archived=True
-    )
+    chat_room_service.archive_room(user_id=buyer["id"], chat_room_id=chat_room["id"])
     chat_rooms = chat_room_service.get_chat_rooms(
         user_id=buyer["id"], user_type="buyer", is_archived=False
     )
@@ -48,9 +46,7 @@ def test_unarchived_chat_room():
         buyer_id=buyer["id"], seller_id=seller["id"], match_id=match["id"]
     )
 
-    chat_room_service.archive_room(
-        user_id=buyer["id"], chat_room_id=chat_room["id"], is_archived=True
-    )
+    chat_room_service.archive_room(user_id=buyer["id"], chat_room_id=chat_room["id"])
     chat_rooms = chat_room_service.get_chat_rooms(
         user_id=buyer["id"], user_type="buyer", is_archived=False
     )
@@ -59,9 +55,7 @@ def test_unarchived_chat_room():
         user_id=buyer["id"], user_type="buyer", is_archived=True
     )
     assert len(chat_rooms) == 1
-    chat_room_service.archive_room(
-        user_id=buyer["id"], chat_room_id=chat_room["id"], is_archived=False
-    )
+    chat_room_service.unarchive_room(user_id=buyer["id"], chat_room_id=chat_room["id"])
     chat_rooms = chat_room_service.get_chat_rooms(
         user_id=buyer["id"], user_type="buyer", is_archived=False
     )
@@ -84,9 +78,7 @@ def test_create_archived_chat_room__seller():
         buyer_id=buyer["id"], seller_id=seller["id"], match_id=match["id"]
     )
 
-    chat_room_service.archive_room(
-        user_id=seller["id"], chat_room_id=chat_room["id"], is_archived=True
-    )
+    chat_room_service.archive_room(user_id=seller["id"], chat_room_id=chat_room["id"])
     chat_rooms = chat_room_service.get_chat_rooms(
         user_id=seller["id"], user_type="seller", is_archived=False
     )
@@ -120,9 +112,7 @@ def test_archived_chat_room__multiple_rooms():
         buyer_id=buyer2["id"], seller_id=seller["id"], match_id=match2["id"]
     )
 
-    chat_room_service.archive_room(
-        user_id=seller["id"], chat_room_id=chat_room["id"], is_archived=True
-    )
+    chat_room_service.archive_room(user_id=seller["id"], chat_room_id=chat_room["id"])
     chat_rooms = chat_room_service.get_chat_rooms(
         user_id=seller["id"], user_type="seller", is_archived=False
     )
@@ -158,9 +148,7 @@ def test_archived_chat_room__other_party_with_multiple_rooms():
         buyer_id=buyer2["id"], seller_id=seller["id"], match_id=match2["id"]
     )
 
-    chat_room_service.archive_room(
-        user_id=seller["id"], chat_room_id=chat_room["id"], is_archived=True
-    )
+    chat_room_service.archive_room(user_id=seller["id"], chat_room_id=chat_room["id"])
     chat_rooms = chat_room_service.get_chat_rooms(
         user_id=buyer["id"], user_type="buyer", is_archived=False
     )
@@ -189,9 +177,7 @@ def test_archived_chat_room__outsider():
         buyer_id=buyer["id"], seller_id=seller["id"], match_id=match["id"]
     )
 
-    chat_room_service.archive_room(
-        user_id=seller["id"], chat_room_id=chat_room["id"], is_archived=True
-    )
+    chat_room_service.archive_room(user_id=seller["id"], chat_room_id=chat_room["id"])
     chat_rooms = chat_room_service.get_chat_rooms(
         user_id=outsider["id"], user_type="buyer", is_archived=False
     )

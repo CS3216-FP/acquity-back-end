@@ -822,18 +822,20 @@ class ChatRoomService:
     def __init__(self, config):
         self.config = config
 
-    def archive_room(self, user_id, chat_room_id, is_archived):
+    def archive_room(self, user_id, chat_room_id):
         with session_scope() as session:
-            if is_archived:
-                archived_chat_room = ArchivedChatRoom(
-                    user_id=user_id, chat_room_id=chat_room_id
-                )
-                session.add(archived_chat_room)
-            else:
-                session.query(ArchivedChatRoom).filter_by(
-                    user_id=user_id, chat_room_id=chat_room_id
-                ).delete(synchronize_session=False)
-            return {"chat_room_id": chat_room_id, "is_archived": is_archived}
+            archived_chat_room = ArchivedChatRoom(
+                user_id=user_id, chat_room_id=chat_room_id
+            )
+            session.add(archived_chat_room)
+        return {"chat_room_id": chat_room_id}
+
+    def unarchive_room(self, user_id, chat_room_id):
+        with session_scope() as session:
+            session.query(ArchivedChatRoom).filter_by(
+                user_id=user_id, chat_room_id=chat_room_id
+            ).delete(synchronize_session=False)
+        return {"chat_room_id": chat_room_id}
 
     def get_chat_rooms(self, user_id, user_type, is_archived):
         data = []
