@@ -141,7 +141,7 @@ class ChatSocketService(socketio.AsyncNamespace):
     @handle_acquity_exceptions("err_unarchive_chatroom")
     async def on_req_unarchive_chatroom(self, sid, data):
         user_id = await self._authenticate(token=data.get("token"))
-        unarchived_result = self.chat_room_service.archive_room(
+        unarchived_result = self.chat_room_service.unarchive_room(
             user_id=user_id, chat_room_id=data.get("chat_room_id")
         )
         await self.emit("res_unarchive_chatroom", unarchived_result, room=user_id)
