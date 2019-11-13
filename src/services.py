@@ -698,8 +698,7 @@ class ChatService:
         self.config = config
 
     def get_chat_by_users(self, user_id):
-        with session_scope() as session:
-            pass
+        pass
 
     def create_new_message(self, chat_room_id, message, author_id, user_type):
         with session_scope() as session:
