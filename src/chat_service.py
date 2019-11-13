@@ -33,7 +33,9 @@ class ChatSocketService(socketio.AsyncNamespace):
         )
         for room in rooms:
             self.enter_room(sid, room.get("chat_room_id"))
+            print("enter_room", sid, room.get("chat_room_id"))
         self.enter_room(sid, user_id)
+        print("enter_room", sid, user_id)
         return rooms
 
     async def on_connect(self, sid, environ):
