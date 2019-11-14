@@ -697,8 +697,31 @@ class ChatService:
     def __init__(self, config):
         self.config = config
 
+    @validate_input({"user_id": UUID_RULE})
     def get_chat_by_users(self, user_id):
-        pass
+        with session_scope() as session:
+            chat_rooms = (
+                session.query(ChatRoom)
+                .filter(
+                    (ChatRoom.buyer_id == user_id) | (ChatRoom.seller_id == user_id)
+                )
+                .all()
+            )
+            chats = session.query(Chat).all()
+
+            res = {}
+            for chat_room in chat_rooms:
+                chat_room_dict = chat_room.asdict()
+                chat_room_dict.pop("is_buyer_revealed")
+                chat_room_dict.pop("is_seller_revealed")
+
+                res[chat_room_dict["id"]] = chat_room_dict
+                res[chat_room_dict["id"]]["chats"] = []
+            for chat in chats:
+                if chat.chat_room_id in res:
+                    res[chat.chat_room_id]["chats"].append(chat.asdict())
+
+        return res
 
     def create_new_message(self, chat_room_id, message, author_id, user_type):
         with session_scope() as session:
