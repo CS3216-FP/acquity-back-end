@@ -2,7 +2,7 @@ from src.config import APP_CONFIG
 from src.services import ChatRoomService
 from tests.fixtures import (
     create_buy_order,
-    create_chatroom,
+    create_chat_room,
     create_match,
     create_sell_order,
     create_user,
@@ -19,7 +19,7 @@ def test_create_chat_room():
     match = create_match(
         "1", buy_order_id=str(buy_order["id"]), sell_order_id=str(sell_order["id"])
     )
-    chat_room = create_chatroom(
+    chat_room = create_chat_room(
         buyer_id=buyer["id"], seller_id=seller["id"], match_id=match["id"]
     )
     assert chat_room["buyer_id"] == buyer["id"]
