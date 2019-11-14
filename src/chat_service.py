@@ -27,47 +27,11 @@ class ChatSocketService(socketio.AsyncNamespace):
         )
         return user.get("id")
 
-    async def _get_chat_rooms(self, sid, user_id, user_type, is_archived):
-        rooms = self.chat_room_service.get_chat_rooms(
-            user_id=user_id, user_type=user_type, is_archived=is_archived
-        )
-        for room in rooms:
-            self.enter_room(sid, room.get("chat_room_id"))
-        self.enter_room(sid, user_id)
-        return rooms
-
     async def on_connect(self, sid, environ):
         return {"data": "success"}
 
     async def on_disconnect(self, sid):
         return {"data": "success"}
-
-    @handle_acquity_exceptions("err_chats")
-    async def on_req_chats(self, sid, data):
-        user_id = await self._authenticate(token=data.get("token"))
-        res = await self.chat_service.get_chat_by_users(user_id=user_id)
-        await self.emit("res_chats", res, room=user_id)
-
-    @handle_acquity_exceptions("err_chat_rooms")
-    async def on_req_chat_rooms(self, sid, data):
-        user_id = await self._authenticate(token=data.get("token"))
-        rooms = await self._get_chat_rooms(
-            sid=sid,
-            user_id=user_id,
-            user_type=data.get("user_type"),
-            is_archived=data.get("is_archived"),
-        )
-        await self.emit("res_chat_rooms", rooms, room=user_id)
-
-    @handle_acquity_exceptions("err_conversation")
-    async def on_req_conversation(self, sid, data):
-        user_id = await self._authenticate(token=data.get("token"))
-        conversation = self.chat_service.get_conversation(
-            user_id=user_id,
-            chat_room_id=data.get("chat_room_id"),
-            user_type=data.get("user_type"),
-        )
-        await self.emit("res_conversation", conversation, room=user_id)
 
     @handle_acquity_exceptions("err_new_message")
     async def on_req_new_message(self, sid, data):
