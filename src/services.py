@@ -700,12 +700,8 @@ class ChatService:
     @validate_input({"user_id": UUID_RULE})
     def get_chats_by_user_id(self, user_id):
         with session_scope() as session:
-            chat_rooms = (
-                session.query(ChatRoom)
-                .filter(
-                    (ChatRoom.buyer_id == user_id) | (ChatRoom.seller_id == user_id)
-                )
-                .all()
+            chat_rooms = ChatRoomService(config=self.config).get_chat_rooms_by_user_id(
+                user_id=user_id
             )
             chats = session.query(Chat).all()
             offers = session.query(Offer).all()
@@ -849,6 +845,18 @@ class ChatRoomService:
                 user_id=user_id, chat_room_id=chat_room_id
             ).delete(synchronize_session=False)
         return {"chat_room_id": chat_room_id}
+
+    @validate_input({"user_id": UUID_RULE})
+    def get_chat_rooms_by_user_id(self, user_id):
+        with session_scope() as session:
+            chat_rooms = (
+                session.query(ChatRoom)
+                .filter(
+                    (ChatRoom.buyer_id == user_id) | (ChatRoom.seller_id == user_id)
+                )
+                .all()
+            )
+            return [chat_room.asdict() for chat_room in chat_rooms]
 
     def get_other_party_details(self, chat_room_id, user_id):
         with session_scope() as session:
