@@ -617,8 +617,7 @@ class OfferService:
                 session=session, chat_room=chat_room, offer=offer
             )
             return OfferService._serialize_chat_offer(
-                offer=offer,
-                is_deal_closed=chat_room.is_deal_closed,
+                offer=offer, is_deal_closed=chat_room.is_deal_closed
             )
 
     def accept_offer(self, chat_room_id, offer_id, user_id, user_type):
@@ -644,8 +643,7 @@ class OfferService:
                 )
             offer = OfferService._get_current_offer(session=session, offer=offer)
             return OfferService._serialize_chat_offer(
-                offer=offer,
-                is_deal_closed=chat_room.is_deal_closed,
+                offer=offer, is_deal_closed=chat_room.is_deal_closed
             )
 
     def reject_offer(self, chat_room_id, offer_id, user_id, user_type):
@@ -672,8 +670,7 @@ class OfferService:
                 session=session, chat_room=chat_room, offer=offer
             )
             return OfferService._serialize_chat_offer(
-                offer=offer,
-                is_deal_closed=chat_room.is_deal_closed,
+                offer=offer, is_deal_closed=chat_room.is_deal_closed
             )
 
     @staticmethod
