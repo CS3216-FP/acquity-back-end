@@ -38,12 +38,12 @@ EMAIL_TEMPLATE = {
         "templates": {"[START DATE]": "start_date", "[END DATE]": "end_date"},
     },
     "round_closing_soon_buyer": {
-        "subject": "Round will be closing in 2 days!"
+        "subject": "Round will be closing in 2 days!",
         "html": "emails/round_closing/buyer.html",
         "templates": {"[END DATE]": "end_date"},
     },
     "round_closing_soon_seller": {
-        "subject": "Round will be closing in 2 days!"
+        "subject": "Round will be closing in 2 days!",
         "html": "emails/round_closing/seller.html",
         "templates": {"[END DATE]": "end_date"},
     },
