@@ -37,6 +37,16 @@ EMAIL_TEMPLATE = {
         "html": "emails/round_opened/seller.html",
         "templates": {"[START DATE]": "start_date", "[END DATE]": "end_date"},
     },
+    "round_closing_soon_buyer": {
+        "subject": "Round will be closing in 2 days!"
+        "html": "emails/round_closing/buyer.html",
+        "templates": {"[END DATE]": "end_date"},
+    },
+    "round_closing_soon_seller": {
+        "subject": "Round will be closing in 2 days!"
+        "html": "emails/round_closing/seller.html",
+        "templates": {"[END DATE]": "end_date"},
+    },
     "create_buy_order": {
         "subject": "Your bid has been created",
         "html": "emails/create_order/buyer.html",
@@ -60,6 +70,10 @@ EMAIL_TEMPLATE = {
     "match_done_no_match": {
         "subject": "We could not find you a match",
         "html": "emails/no_match.html",
+    },
+    "new_chat_message": {
+        "subject": "You've got a new message on Acquity",
+        "html": "emails/chat_message.html",
     },
     "new_user_review": {
         "subject": "A new user has registered!",
