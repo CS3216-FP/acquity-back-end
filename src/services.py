@@ -617,11 +617,8 @@ class OfferService:
                 session=session, chat_room=chat_room, offer=offer
             )
             return OfferService._serialize_chat_offer(
-                chat_room_id=chat_room_id,
                 offer=offer,
                 is_deal_closed=chat_room.is_deal_closed,
-                user_type=user_type,
-                user_id=author_id,
             )
 
     def accept_offer(self, chat_room_id, offer_id, user_id, user_type):
@@ -647,11 +644,8 @@ class OfferService:
                 )
             offer = OfferService._get_current_offer(session=session, offer=offer)
             return OfferService._serialize_chat_offer(
-                chat_room_id=chat_room_id,
                 offer=offer,
                 is_deal_closed=chat_room.is_deal_closed,
-                user_type=user_type,
-                user_id=user_id,
             )
 
     def reject_offer(self, chat_room_id, offer_id, user_id, user_type):
@@ -678,11 +672,8 @@ class OfferService:
                 session=session, chat_room=chat_room, offer=offer
             )
             return OfferService._serialize_chat_offer(
-                chat_room_id=chat_room_id,
                 offer=offer,
                 is_deal_closed=chat_room.is_deal_closed,
-                user_type=user_type,
-                user_id=user_id,
             )
 
     @staticmethod
@@ -705,7 +696,7 @@ class OfferService:
             raise InvalidRequestException("There are still pending offers")
 
     @staticmethod
-    def _serialize_chat_offer(chat_room_id, offer, is_deal_closed, user_type, user_id):
+    def _serialize_chat_offer(offer, is_deal_closed):
         return {"type": "offer", "is_deal_closed": is_deal_closed, **offer}
 
     @staticmethod
@@ -843,13 +834,7 @@ class ChatService:
                     emails=[other_party_email], template="new_chat_message"
                 )
 
-            return self._serialize_chat_message(
-                chat_room_id=chat_room_id, message=message, user_type=user_type
-            )
-
-    @staticmethod
-    def _serialize_chat_message(chat_room_id, message, user_type):
-        return {"type": "chat", **message}
+            return {"type": "chat", **message}
 
     @staticmethod
     def _get_current_message(session, message):
