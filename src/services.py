@@ -633,7 +633,7 @@ class OfferService:
                 user_type=user_type,
             )
             chat_room = session.query(ChatRoom).get(chat_room_id)
-            offer = session.query(Offer).filter_by(id=offer_id).one()
+            offer = session.query(Offer).get(offer_id)
 
             if offer.offer_status != "PENDING":
                 raise InvalidRequestException("Offer is closed")
@@ -663,7 +663,7 @@ class OfferService:
                 user_type=user_type,
             )
             chat_room = session.query(ChatRoom).get(chat_room_id)
-            offer = session.query(Offer).filter_by(id=offer_id).one()
+            offer = session.query(Offer).get(offer_id)
             if offer.offer_status != "PENDING":
                 raise InvalidRequestException("Offer is closed")
             OfferService._update_offer_status(
@@ -708,8 +708,7 @@ class OfferService:
     def _serialize_chat_offer(chat_room_id, offer, is_deal_closed, user_type, user_id):
         return {
             "chat_room_id": chat_room_id,
-            "updated_at": datetime.timestamp(offer.get("created_at")) * 1000,
-            "new_chat": {"type": "offer", **offer},
+            "updated_at": offer["created_at"],
             "is_deal_closed": is_deal_closed,
         }
 
@@ -773,7 +772,7 @@ class ChatService:
                 res[str(chat_room.id)]["sell_order"] = sell_order.asdict()
 
                 res[str(chat_room.id)]["chats"] = []
-                res[str(chat_room.id)]["pending_offer"] = None
+                res[str(chat_room.id)]["latest_offer"] = None
 
             for chat in chats:
                 if chat.chat_room_id in res:
@@ -786,8 +785,8 @@ class ChatService:
                         {"type": "offer", **offer.asdict()}
                     )
 
-                    if offer.offer_status == "PENDING":
-                        res[offer.chat_room_id]["pending_offer"] = offer.asdict()
+                    if offer.offer_status != "REJECTED":
+                        res[offer.chat_room_id]["latest_offer"] = offer.asdict()
 
             for v in res.values():
                 v["chats"].sort(key=lambda x: x["created_at"])
@@ -854,11 +853,7 @@ class ChatService:
 
     @staticmethod
     def _serialize_chat_message(chat_room_id, message, user_type):
-        return {
-            "chat_room_id": chat_room_id,
-            "updated_at": datetime.timestamp(message.get("created_at")) * 1000,
-            "new_chat": {"type": "chat", **message},
-        }
+        return {"chat_room_id": chat_room_id, "updated_at": message["created_at"]}
 
     @staticmethod
     def _get_current_message(session, message):
