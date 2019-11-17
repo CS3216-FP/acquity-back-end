@@ -718,15 +718,11 @@ class ChatService:
             res = {}
 
             for chat_room in chat_rooms:
-                if chat_room["buyer_id"] == user_id:
-                    chat_room["is_revealed"] = chat_room["is_buyer_revealed"]
-                else:
-                    chat_room["is_revealed"] = chat_room["is_seller_revealed"]
-                chat_room.pop("is_buyer_revealed")
-                chat_room.pop("is_seller_revealed")
-
-                res[chat_room["id"]] = chat_room
-                res[chat_room["id"]]["chats"] = []
+                chat_room_repr = ChatRoomService(self.config)._serialize_chat_room(
+                    chat_room, user_id
+                )
+                res[chat_room.id] = chat_room_repr
+                res[chat_room.id]["chats"] = []
 
             for chat in chats:
                 if chat.chat_room_id in res:
@@ -781,14 +777,11 @@ class ChatService:
             )
 
             return self._serialize_chat_message(
-                chat_room_id=chat_room_id,
-                message=message,
-                user_type=user_type,
-                user_id=author_id,
+                chat_room_id=chat_room_id, message=message, user_type=user_type
             )
 
     @staticmethod
-    def _serialize_chat_message(chat_room_id, message, user_type, user_id):
+    def _serialize_chat_message(chat_room_id, message, user_type):
         return {
             "chat_room_id": chat_room_id,
             "updated_at": datetime.timestamp(message.get("created_at")) * 1000,
@@ -874,6 +867,9 @@ class ChatRoomService:
                 buyer = session.query(User).get(chat_room.buyer_id)
                 seller = session.query(User).get(chat_room.buyer_id)
                 return {
+                    **ChatRoomService(self.config)._serialize_chat_room(
+                        chat_room, user_id
+                    ),
                     "buyer": {"email": buyer.email, "full_name": buyer.full_name},
                     "seller": {"email": seller.email, "full_name": seller.full_name},
                 }
@@ -917,17 +913,16 @@ class ChatRoomService:
             return ArchivedChatRoom.user_id.is_(None)
 
     @staticmethod
-    def _serialize_chat_room(chat_room, buy_order, sell_order):
-        return {
-            "chat_room_id": chat_room.get("id"),
-            "friendly_name": chat_room.get("friendly_name"),
-            "is_deal_closed": chat_room.get("is_deal_closed"),
-            "seller_price": sell_order.get("price"),
-            "seller_number_of_shares": sell_order.get("number_of_shares"),
-            "buyer_price": buy_order.get("price"),
-            "buyer_number_of_shares": buy_order.get("number_of_shares"),
-            "updated_at": datetime.timestamp(chat_room.get("updated_at")) * 1000,
-        }
+    def _serialize_chat_room(chat_room, user_id):
+        res = chat_room.asdict()
+        if res["buyer_id"] == user_id:
+            res["is_revealed"] = res["is_buyer_revealed"]
+        else:
+            res["is_revealed"] = res["is_seller_revealed"]
+        res.pop("is_buyer_revealed")
+        res.pop("is_seller_revealed")
+
+        return res
 
 
 class LinkedInLogin:
