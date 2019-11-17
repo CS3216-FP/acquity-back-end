@@ -773,6 +773,7 @@ class ChatService:
                 res[str(chat_room.id)]["sell_order"] = sell_order.asdict()
 
                 res[str(chat_room.id)]["chats"] = []
+                res[str(chat_room.id)]["pending_offer"] = None
 
             for chat in chats:
                 if chat.chat_room_id in res:
@@ -784,6 +785,9 @@ class ChatService:
                     res[offer.chat_room_id]["chats"].append(
                         {"type": "offer", **offer.asdict()}
                     )
+
+                    if offer.offer_status == "PENDING":
+                        res[offer.chat_room_id]["pending_offer"] = offer.asdict()
 
             for v in res.values():
                 v["chats"].sort(key=lambda x: x["created_at"])
