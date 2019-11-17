@@ -15,6 +15,13 @@ from tests.utils import assert_dict_in
 chat_service = ChatService(config=APP_CONFIG)
 
 
+# TODO refactor this mess
+# - normal test for unarchived rooms (room, chats, buy_order, sell_order)
+# - normal test for archived rooms
+# - normal test for rooms the user is not in
+# - test ordering by created_at
+# - test the as_buyer, as_seller params
+# - test is_revealed behavior
 def test_get_chats_by_user_id():
     me = create_user()
 
@@ -96,7 +103,9 @@ def test_get_chats_by_user_id():
         created_at=datetime.now() + timedelta(hours=1),
     )
 
-    res = chat_service.get_chats_by_user_id(user_id=me["id"])
+    res = chat_service.get_chats_by_user_id(
+        user_id=me["id"], as_buyer=True, as_seller=True
+    )
 
     assert len(res["archived"]) == 1
     res_archived_chat_room = res["archived"][archived_chat_room["id"]]
@@ -141,3 +150,15 @@ def test_get_chats_by_user_id():
     assert_dict_in(chat_room2_offer, res_chat_room2_chats[0])
     assert_dict_in(chat_room2_chat1, res_chat_room2_chats[1])
     assert_dict_in(chat_room2_chat2, res_chat_room2_chats[2])
+
+    res_buyer = chat_service.get_chats_by_user_id(
+        user_id=me["id"], as_buyer=True, as_seller=False
+    )
+    assert len(res_buyer["unarchived"]) == 1
+    assert chat_room1["id"] in res_buyer["unarchived"]
+
+    res_seller = chat_service.get_chats_by_user_id(
+        user_id=me["id"], as_buyer=False, as_seller=True
+    )
+    assert len(res_seller["unarchived"]) == 1
+    assert chat_room2["id"] in res_seller["unarchived"]
