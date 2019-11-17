@@ -709,20 +709,30 @@ class ChatService:
     @validate_input({"user_id": UUID_RULE})
     def get_chats_by_user_id(self, user_id):
         with session_scope() as session:
-            chat_rooms = ChatRoomService(config=self.config).get_chat_rooms_by_user_id(
-                user_id=user_id
+            chat_room_queries = (
+                session.query(ChatRoom, Match, BuyOrder, SellOrder)
+                .filter(ChatRoom.match_id == Match.id)
+                .filter(Match.buy_order_id == BuyOrder.id)
+                .filter(Match.sell_order_id == SellOrder.id)
+                .filter(
+                    (ChatRoom.buyer_id == user_id) | (ChatRoom.seller_id == user_id)
+                )
+                .all()
             )
             chats = session.query(Chat).all()
             offers = session.query(Offer).all()
 
             res = {}
 
-            for chat_room in chat_rooms:
+            for chat_room, match, buy_order, sell_order in chat_room_queries:
                 chat_room_repr = ChatRoomService(self.config)._serialize_chat_room(
                     chat_room, user_id
                 )
-                res[chat_room.id] = chat_room_repr
-                res[chat_room.id]["chats"] = []
+                res[str(chat_room.id)] = chat_room_repr
+                res[str(chat_room.id)]["buy_order"] = buy_order.asdict()
+                res[str(chat_room.id)]["sell_order"] = sell_order.asdict()
+
+                res[str(chat_room.id)]["chats"] = []
 
             for chat in chats:
                 if chat.chat_room_id in res:
