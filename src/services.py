@@ -706,11 +706,7 @@ class OfferService:
 
     @staticmethod
     def _serialize_chat_offer(chat_room_id, offer, is_deal_closed, user_type, user_id):
-        return {
-            "chat_room_id": chat_room_id,
-            "updated_at": offer["created_at"],
-            "is_deal_closed": is_deal_closed,
-        }
+        return {"type": "offer", "is_deal_closed": is_deal_closed, **offer}
 
     @staticmethod
     def _get_current_offer(session, offer):
@@ -853,7 +849,7 @@ class ChatService:
 
     @staticmethod
     def _serialize_chat_message(chat_room_id, message, user_type):
-        return {"chat_room_id": chat_room_id, "updated_at": message["created_at"]}
+        return {"type": "chat", **message}
 
     @staticmethod
     def _get_current_message(session, message):
