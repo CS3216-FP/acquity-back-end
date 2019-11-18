@@ -209,7 +209,7 @@ class UserChatRoomAssociation(Base):
     chat_room_id = Column(
         UUID, ForeignKey("chat_rooms.id", ondelete="CASCADE"), nullable=False
     )
-    role = Column(Enum("BUYER", "SELLER"), nullable=False)
+    role = Column(Enum("BUYER", "SELLER", name="user_type"), nullable=False)
     is_revealed = Column(Boolean, nullable=False, server_default="f")
     is_archived = Column(Boolean, nullable=False, server_default="f")
     last_read_id = Column(UUID, ForeignKey("chats.id", ondelete="CASCADE"))

@@ -530,12 +530,12 @@ class MatchService:
 
                 buyer_assoc = UserChatRoomAssociation(
                     user_id=buy_order_to_buyer_dict[buy_order_id],
-                    chat_room_id=chat_room.id,
+                    chat_room_id=str(chat_room.id),
                     role="BUYER",
                 )
                 seller_assoc = UserChatRoomAssociation(
                     user_id=sell_order_to_seller_dict[sell_order_id],
-                    chat_room_id=chat_room.id,
+                    chat_room_id=str(chat_room.id),
                     role="SELLER",
                 )
                 session.add_all([buyer_assoc, seller_assoc])
