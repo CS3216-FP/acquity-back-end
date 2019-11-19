@@ -1019,9 +1019,7 @@ class LinkedInLogin:
             if len(users) == 1:
                 return users[0]
 
-        user_profile = self.get_user_profile(token=token)
-        email = self._get_user_email(token=token)
-        return {**user_profile, "email": email}
+        return self.get_user_profile(token=token)
 
     def _get_token(self, code, redirect_uri):
         res = requests.post(
