@@ -73,22 +73,25 @@ class UserService:
                 session.add(user)
                 session.flush()
 
-                buy_req = UserRequest(user_id=str(user.id), is_buy=True)
-                session.add(buy_req)
-                if not is_buy:
-                    sell_req = UserRequest(user_id=str(user.id), is_buy=False)
-                    session.add(sell_req)
+                if is_buy is not None:
+                    buy_req = UserRequest(user_id=str(user.id), is_buy=True)
+                    session.add(buy_req)
+                    if not is_buy:
+                        sell_req = UserRequest(user_id=str(user.id), is_buy=False)
+                        session.add(sell_req)
 
-                email_template = "register_buyer" if is_buy else "register_seller"
-                self.email_service.send_email(emails=[email], template=email_template)
+                    email_template = "register_buyer" if is_buy else "register_seller"
+                    self.email_service.send_email(
+                        emails=[email], template=email_template
+                    )
 
-                committee_emails = [
-                    u.email
-                    for u in session.query(User).filter_by(is_committee=True).all()
-                ]
-                self.email_service.send_email(
-                    emails=committee_emails, template="new_user_review"
-                )
+                    committee_emails = [
+                        u.email
+                        for u in session.query(User).filter_by(is_committee=True).all()
+                    ]
+                    self.email_service.send_email(
+                        emails=committee_emails, template="new_user_review"
+                    )
             else:
                 user.email = email
                 user.full_name = full_name
@@ -1021,7 +1024,6 @@ class LinkedInLogin:
         return {**user_profile, "email": email}
 
     def _get_token(self, code, redirect_uri):
-        print("=============================================================================GT", code, redirect_uri)
         res = requests.post(
             "https://www.linkedin.com/oauth/v2/accessToken",
             headers={"Content-Type": "x-www-form-urlencoded"},
@@ -1039,15 +1041,23 @@ class LinkedInLogin:
             raise UserProfileNotFoundException("Token retrieval failed.")
         return json_res
 
-    @staticmethod
-    def get_user_profile(token):
-        print("=============================================================================GUP", token)
+    def get_user_profile(self, token):
+        email_request = requests.get(
+            "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        if email_request.status_code == 401:
+            raise UserProfileNotFoundException("User email not found.")
+        email_data = email_request.json()
+        email = email_data.get("elements")[0].get("handle~").get("emailAddress")
+
         user_profile_request = requests.get(
             "https://api.linkedin.com/v2/me?projection=(id,firstName,lastName,profilePicture(displayImage~:playableStreams))",
             headers={"Authorization": f"Bearer {token}"},
         )
         if user_profile_request.status_code == 401:
             raise UserProfileNotFoundException("User profile not found.")
+
         user_profile_data = user_profile_request.json()
         provider_user_id = user_profile_data.get("id")
         first_name = user_profile_data.get("firstName").get("localized").get("en_US")
@@ -1063,23 +1073,14 @@ class LinkedInLogin:
         except AttributeError:
             display_image_url = None
 
-        return {
-            "full_name": f"{first_name} {last_name}",
-            "display_image_url": display_image_url,
-            "provider_user_id": provider_user_id,
-        }
-
-    @staticmethod
-    def _get_user_email(token):
-        print("=============================================================================GUE", token)
-        email_request = requests.get(
-            "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
-            headers={"Authorization": f"Bearer {token}"},
+        return UserService(self.config).create_if_not_exists(
+            email=email,
+            full_name=f"{first_name} {last_name}",
+            display_image_url=display_image_url,
+            provider_user_id=provider_user_id,
+            is_buy=None,
+            auth_token=token,
         )
-        if email_request.status_code == 401:
-            raise UserProfileNotFoundException("User email not found")
-        email_data = email_request.json()
-        return email_data.get("elements")[0].get("handle~").get("emailAddress")
 
 
 class UserRequestService:
