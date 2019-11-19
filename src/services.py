@@ -1021,6 +1021,7 @@ class LinkedInLogin:
         return {**user_profile, "email": email}
 
     def _get_token(self, code, redirect_uri):
+        print("=============================================================================GT", code, redirect_uri)
         res = requests.post(
             "https://www.linkedin.com/oauth/v2/accessToken",
             headers={"Content-Type": "x-www-form-urlencoded"},
@@ -1040,6 +1041,7 @@ class LinkedInLogin:
 
     @staticmethod
     def get_user_profile(token):
+        print("=============================================================================GUP", token)
         user_profile_request = requests.get(
             "https://api.linkedin.com/v2/me?projection=(id,firstName,lastName,profilePicture(displayImage~:playableStreams))",
             headers={"Authorization": f"Bearer {token}"},
@@ -1069,6 +1071,7 @@ class LinkedInLogin:
 
     @staticmethod
     def _get_user_email(token):
+        print("=============================================================================GUE", token)
         email_request = requests.get(
             "https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))",
             headers={"Authorization": f"Bearer {token}"},
